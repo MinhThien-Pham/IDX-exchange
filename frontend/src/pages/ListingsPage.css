@@ -1,0 +1,67 @@
+.listings-page {
+  min-height: 100vh;
+  padding: 32px;
+  background: #f9fafb;
+}
+
+.listings-header {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+}
+
+.listings-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  color: #111827;
+}
+
+.listings-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.property-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.loading-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #374151;
+}
+
+.error-box {
+  max-width: 600px;
+  margin: 80px auto;
+  padding: 24px;
+  background: white;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.error-box h1 {
+  color: #991b1b;
+}
+
+.error-box p {
+  color: #374151;
+}
+
+.error-box button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error-box button:hover {
+  background: #1d4ed8;
+}
