@@ -1,0 +1,64 @@
+.property-filters {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.property-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.property-filters input,
+.property-filters select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.property-filters input::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.filter-actions button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-actions button:hover {
+  background: #1d4ed8;
+}
+
+.filter-actions .clear-button {
+  background: #6b7280;
+}
+
+.filter-actions .clear-button:hover {
+  background: #4b5563;
+}

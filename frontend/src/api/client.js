@@ -1,8 +1,22 @@
 const API_BASE = '';
 
+function buildQueryString(params = {}) {
+    const cleanParams = {};
+
+    Object.keys(params).forEach((key) => {
+        const value = params[key];
+
+        if (value !== undefined && value !== null && value !== '') {
+            cleanParams[key] = value;
+        }
+    });
+
+    return new URLSearchParams(cleanParams).toString();
+}
+
 export async function fetchProperties(params = {}) {
     try {
-        const query = new URLSearchParams(params).toString();
+        const query = buildQueryString(params);
         const url = `${API_BASE}/api/properties${query ? `?${query}` : ''}`;
 
         const response = await fetch(url);
@@ -51,3 +65,5 @@ export async function fetchOpenHouses(listingId) {
         throw error;
     }
 }
+
+export { buildQueryString };

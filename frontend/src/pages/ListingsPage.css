@@ -65,3 +65,23 @@
 .error-box button:hover {
   background: #1d4ed8;
 }
+
+.empty-state {
+  max-width: 600px;
+  margin: 48px auto;
+  padding: 32px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin: 0 0 8px;
+  color: #111827;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #6b7280;
+}
