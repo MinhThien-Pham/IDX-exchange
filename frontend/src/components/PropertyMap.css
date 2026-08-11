@@ -1,0 +1,42 @@
+.property-map {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.property-map-frame {
+  width: 100%;
+  height: 350px;
+  display: block;
+  border: 0;
+}
+
+.directions-link {
+  display: block;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #2563eb;
+  text-align: right;
+  text-decoration: none;
+}
+
+.directions-link:hover {
+  text-decoration: underline;
+}
+
+.map-unavailable {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.map-unavailable p {
+  margin-top: 0;
+}
+
+.map-unavailable a {
+  color: #2563eb;
+}

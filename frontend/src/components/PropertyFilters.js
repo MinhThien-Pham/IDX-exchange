@@ -22,8 +22,11 @@ function cleanFilters(filters) {
     return cleaned;
 }
 
-function PropertyFilters({ onSearch, onClear }) {
-    const [filters, setFilters] = useState(initialFilters);
+function PropertyFilters({ onSearch, onClear, initialValues }) {
+    const [filters, setFilters] = useState(() => ({
+        ...initialFilters,
+        ...(initialValues || {}),
+    }));
 
     function handleChange(event) {
         const { name, value } = event.target;

@@ -4,16 +4,23 @@ import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
 import './ListingsPage.css';
 import Pagination from '../components/Pagination';
+import { useLocation } from 'react-router-dom';
 
 function ListingsPage() {
     const [properties, setProperties] = useState([]);
     const [total, setTotal] = useState(0);
     const [limit] = useState(20);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [filters, setFilters] = useState({});
+    const [currentPage, setCurrentPage] = useState(
+        () => savedListingsState?.currentPage || 1
+    );
+    const [filters, setFilters] = useState(
+        () => savedListingsState?.filters || {}
+    );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const location = useLocation();
+    const savedListingsState = location.state?.listingsState;
     const requestIdRef = useRef(0);
 
     const loadProperties = useCallback(
@@ -110,7 +117,11 @@ function ListingsPage() {
                 </p>
             </header>
 
-            <PropertyFilters onSearch={handleSearch} onClear={handleClear} />
+            <PropertyFilters
+                onSearch={handleSearch}
+                onClear={handleClear}
+                initialValues={filters}
+            />
 
             {properties.length === 0 ? (
                 <div className="empty-state">
@@ -124,6 +135,10 @@ function ListingsPage() {
                             <PropertyCard
                                 key={property.L_ListingID}
                                 property={property}
+                                listingsState={{
+                                    filters,
+                                    currentPage,
+                                }}
                             />
                         ))}
                     </section>

@@ -1,24 +1,6 @@
+import { useNavigate } from 'react-router-dom';
+import PropertyImageCarousel from './PropertyImageCarousel';
 import './PropertyCard.css';
-
-function getFirstPhoto(photoValue) {
-    if (!photoValue) {
-        return null;
-    }
-
-    try {
-        const photos = typeof photoValue === 'string'
-            ? JSON.parse(photoValue)
-            : photoValue;
-
-        if (Array.isArray(photos) && photos.length > 0 && photos[0]) {
-            return photos[0];
-        }
-
-        return null;
-    } catch (error) {
-        return null;
-    }
-}
 
 function formatPrice(price) {
     const numberPrice = Number(price);
@@ -34,23 +16,40 @@ function formatPrice(price) {
     }).format(numberPrice);
 }
 
-function PropertyCard({ property }) {
-    const firstPhoto = getFirstPhoto(property.L_Photos);
+function PropertyCard({ property, listingsState }) {
+    const navigate = useNavigate();
+
+    function openProperty() {
+        navigate(`/property/${property.L_ListingID}`, {
+            state: {
+                listingsState,
+            },
+        });
+    }
+
+    function handleKeyDown(event) {
+        if (
+            event.target === event.currentTarget &&
+            event.key === 'Enter'
+        ) {
+            openProperty();
+        }
+    }
 
     return (
-        <div className="property-card">
+        <div
+            className="property-card"
+            onClick={openProperty}
+            onKeyDown={handleKeyDown}
+            role="link"
+            tabIndex={0}
+            aria-label={`View ${property.L_Address || 'property'}`}
+        >
             <div className="property-image-wrapper">
-                {firstPhoto ? (
-                    <img
-                        src={firstPhoto}
-                        alt={property.L_Address || 'Property'}
-                        className="property-image"
-                    />
-                ) : (
-                    <div className="property-image-placeholder">
-                        No Photo Available
-                    </div>
-                )}
+                <PropertyImageCarousel
+                    photos={property.L_Photos}
+                    address={property.L_Address}
+                />
             </div>
 
             <div className="property-card-content">
@@ -63,7 +62,8 @@ function PropertyCard({ property }) {
                 </p>
 
                 <p className="property-location">
-                    {property.L_City || 'Unknown City'}, {property.L_State || 'Unknown State'}
+                    {property.L_City || 'Unknown City'},{' '}
+                    {property.L_State || 'Unknown State'}
                 </p>
 
                 <div className="property-stats">
