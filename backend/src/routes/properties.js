@@ -19,6 +19,8 @@ router.get('/', async (req, res) => {
             maxPrice,
             beds,
             baths,
+            sortBy,
+            sortOrder,
         } = req.query;
 
         const limit = req.query.limit === undefined ? 20 : Number(req.query.limit);
@@ -60,6 +62,33 @@ router.get('/', async (req, res) => {
             });
         }
 
+        const validSortFields = [
+            'L_SystemPrice',
+            'ListingContractDate',
+            'LM_Int2_3',
+            'L_Keyword2',
+        ];
+
+        const validSortOrders = ['ASC', 'DESC'];
+
+        if (sortBy !== undefined && !validSortFields.includes(sortBy)) {
+            return res.status(400).json({
+                error: 'Invalid sortBy field',
+            });
+        }
+
+        let normalizedSortOrder = 'ASC';
+
+        if (sortOrder !== undefined) {
+            normalizedSortOrder = String(sortOrder).toUpperCase();
+
+            if (!validSortOrders.includes(normalizedSortOrder)) {
+                return res.status(400).json({
+                    error: 'sortOrder must be ASC or DESC',
+                });
+            }
+        }
+
         const conditions = [];
         const values = [];
 
@@ -96,6 +125,10 @@ router.get('/', async (req, res) => {
         const whereClause =
             conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+        const orderClause = sortBy
+            ? `ORDER BY ${sortBy} ${normalizedSortOrder}`
+            : '';
+
         const countQuery = `
       SELECT COUNT(*) AS total
       FROM rets_property
@@ -106,11 +139,12 @@ router.get('/', async (req, res) => {
         const total = countResult[0].total;
 
         const dataQuery = `
-      SELECT *
-      FROM rets_property
-      ${whereClause}
-      LIMIT ? OFFSET ?
-    `;
+            SELECT *
+            FROM rets_property
+            ${whereClause}
+            ${orderClause}
+            LIMIT ? OFFSET ?
+        `;
 
         const [results] = await pool.query(dataQuery, [...values, limit, offset]);
 

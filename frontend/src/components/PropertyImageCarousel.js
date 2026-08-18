@@ -61,7 +61,7 @@ function PropertyImageCarousel({ photos, address }) {
         <div className="property-carousel">
             <img
                 src={photoList[currentIndex]}
-                alt={`${address || 'Property'} photo ${currentIndex + 1}`}
+                alt={`${address || 'Property'} ${currentIndex + 1}`}
                 className="property-carousel-image"
             />
 

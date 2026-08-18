@@ -85,3 +85,25 @@
   margin: 0;
   color: #6b7280;
 }
+
+.sort-controls {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sort-controls label {
+  color: #374151;
+  font-weight: 600;
+}
+
+.sort-controls select {
+  padding: 9px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+}
