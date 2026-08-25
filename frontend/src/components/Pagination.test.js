@@ -3,7 +3,7 @@ import Pagination, { getPageItems } from './Pagination';
 
 describe('Pagination', () => {
     test('hides pagination when there is only one page', () => {
-        const { container } = render(
+        render(
             <Pagination
                 currentPage={1}
                 totalPages={1}
@@ -11,7 +11,11 @@ describe('Pagination', () => {
             />
         );
 
-        expect(container.firstChild).toBeNull();
+        expect(
+            screen.queryByRole('navigation', {
+                name: 'Property pagination',
+            })
+        ).not.toBeInTheDocument();
     });
 
     test('disables Previous on the first page', () => {
