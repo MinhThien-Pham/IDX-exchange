@@ -17,10 +17,7 @@ export function formatOpenHouseDate(value) {
         return 'Date unavailable';
     }
 
-    const datePart =
-        typeof value === 'string'
-            ? value.slice(0, 10)
-            : value;
+    const datePart = typeof value === 'string' ? value.slice(0, 10) : value;
 
     const date = new Date(`${datePart}T00:00:00`);
 
@@ -50,10 +47,7 @@ export function formatTime(value) {
     const hours = Number(parts[0]);
     const minutes = Number(parts[1]);
 
-    if (
-        Number.isNaN(hours) ||
-        Number.isNaN(minutes)
-    ) {
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
         return String(value);
     }
 

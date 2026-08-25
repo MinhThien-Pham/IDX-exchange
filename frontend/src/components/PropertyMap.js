@@ -14,11 +14,7 @@ function PropertyMap({ lat, lng, address, apiKey }) {
             <div className="map-unavailable">
                 <p>Map is not configured.</p>
 
-                <a
-                    href={directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <a href={directionsUrl} target="_blank" rel="noopener noreferrer">
                     Get Directions
                 </a>
             </div>

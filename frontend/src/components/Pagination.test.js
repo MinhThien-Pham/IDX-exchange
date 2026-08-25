@@ -3,63 +3,35 @@ import Pagination, { getPageItems } from './Pagination';
 
 describe('Pagination', () => {
     test('hides pagination when there is only one page', () => {
-        const { container } = render(
-            <Pagination
-                currentPage={1}
-                totalPages={1}
-                onPageChange={jest.fn()}
-            />
-        );
+        render(<Pagination currentPage={1} totalPages={1} onPageChange={jest.fn()} />);
 
-        expect(container.firstChild).toBeNull();
+        expect(
+            screen.queryByRole('navigation', {
+                name: 'Property pagination',
+            })
+        ).not.toBeInTheDocument();
     });
 
     test('disables Previous on the first page', () => {
-        render(
-            <Pagination
-                currentPage={1}
-                totalPages={5}
-                onPageChange={jest.fn()}
-            />
-        );
+        render(<Pagination currentPage={1} totalPages={5} onPageChange={jest.fn()} />);
 
-        expect(
-            screen.getByRole('button', { name: 'Previous' })
-        ).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
 
-        expect(
-            screen.getByRole('button', { name: 'Next' })
-        ).not.toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Next' })).not.toBeDisabled();
     });
 
     test('disables Next on the last page', () => {
-        render(
-            <Pagination
-                currentPage={5}
-                totalPages={5}
-                onPageChange={jest.fn()}
-            />
-        );
+        render(<Pagination currentPage={5} totalPages={5} onPageChange={jest.fn()} />);
 
-        expect(
-            screen.getByRole('button', { name: 'Next' })
-        ).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     });
 
     test('changes page when a page number is clicked', () => {
         const onPageChange = jest.fn();
 
-        render(
-            <Pagination
-                currentPage={1}
-                totalPages={5}
-                onPageChange={onPageChange}
-            />
-        );
+        render(<Pagination currentPage={1} totalPages={5} onPageChange={onPageChange} />);
 
-        fireEvent.click(
-            screen.getByRole('button', { name: '3' })
-        );
+        fireEvent.click(screen.getByRole('button', { name: '3' }));
 
         expect(onPageChange).toHaveBeenCalledWith(3);
     });
@@ -67,29 +39,15 @@ describe('Pagination', () => {
     test('changes page when Next is clicked', () => {
         const onPageChange = jest.fn();
 
-        render(
-            <Pagination
-                currentPage={2}
-                totalPages={5}
-                onPageChange={onPageChange}
-            />
-        );
+        render(<Pagination currentPage={2} totalPages={5} onPageChange={onPageChange} />);
 
-        fireEvent.click(
-            screen.getByRole('button', { name: 'Next' })
-        );
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
         expect(onPageChange).toHaveBeenCalledWith(3);
     });
 
     test('shows ellipsis for a middle page', () => {
-        render(
-            <Pagination
-                currentPage={5}
-                totalPages={24}
-                onPageChange={jest.fn()}
-            />
-        );
+        render(<Pagination currentPage={5} totalPages={24} onPageChange={jest.fn()} />);
 
         expect(screen.getByText('1')).toBeInTheDocument();
         expect(screen.getByText('4')).toBeInTheDocument();
@@ -103,8 +61,6 @@ describe('Pagination', () => {
     test('does not duplicate the last page near the end', () => {
         const items = getPageItems(23, 24);
 
-        expect(
-            items.filter((item) => item === 24)
-        ).toHaveLength(1);
+        expect(items.filter((item) => item === 24)).toHaveLength(1);
     });
 });
