@@ -1,21 +1,8 @@
+import { formatPrice } from '../utils/formatting';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import PropertyImageCarousel from './PropertyImageCarousel';
 import './PropertyCard.css';
-
-function formatPrice(price) {
-    const numberPrice = Number(price);
-
-    if (Number.isNaN(numberPrice)) {
-        return 'Price unavailable';
-    }
-
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-    }).format(numberPrice);
-}
 
 function PropertyCard({ property, listingsState }) {
     const navigate = useNavigate();
