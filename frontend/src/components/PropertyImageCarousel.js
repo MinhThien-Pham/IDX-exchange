@@ -1,33 +1,6 @@
 import { useState } from 'react';
 import './PropertyImageCarousel.css';
-
-function parsePhotos(photoValue) {
-    if (!photoValue) {
-        return [];
-    }
-
-    try {
-        const photos =
-            typeof photoValue === 'string'
-                ? JSON.parse(photoValue)
-                : photoValue;
-
-        return Array.isArray(photos)
-            ? photos.filter((photo) => typeof photo === 'string' && photo.trim())
-            : [];
-    } catch {
-        // Defensive fallback in case a row contains a direct URL
-        // instead of a valid JSON array.
-        if (
-            typeof photoValue === 'string' &&
-            /^https?:\/\//i.test(photoValue.trim())
-        ) {
-            return [photoValue.trim()];
-        }
-
-        return [];
-    }
-}
+import { parsePhotos } from '../utils/photos';
 
 function PropertyImageCarousel({ photos, address }) {
     const [currentIndex, setCurrentIndex] = useState(0);
