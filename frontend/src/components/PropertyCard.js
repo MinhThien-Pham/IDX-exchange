@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import PropertyImageCarousel from './PropertyImageCarousel';
 import './PropertyCard.css';
@@ -75,5 +76,50 @@ function PropertyCard({ property, listingsState }) {
         </div>
     );
 }
+
+PropertyCard.propTypes = {
+    property: PropTypes.shape({
+        L_ListingID: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.number,
+        ]).isRequired,
+
+        L_SystemPrice: PropTypes.oneOfType([
+            PropTypes.number,
+            PropTypes.string,
+        ]),
+
+        L_Address: PropTypes.string,
+        L_City: PropTypes.string,
+        L_State: PropTypes.string,
+
+        L_Keyword2: PropTypes.oneOfType([
+            PropTypes.number,
+            PropTypes.string,
+        ]),
+
+        LM_Dec_3: PropTypes.oneOfType([
+            PropTypes.number,
+            PropTypes.string,
+        ]),
+
+        LM_Int2_3: PropTypes.oneOfType([
+            PropTypes.number,
+            PropTypes.string,
+        ]),
+
+        L_Photos: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.arrayOf(PropTypes.string),
+        ]),
+    }).isRequired,
+
+    listingsState: PropTypes.shape({
+        filters: PropTypes.object,
+        currentPage: PropTypes.number,
+        sortBy: PropTypes.string,
+        sortOrder: PropTypes.oneOf(['ASC', 'DESC']),
+    }),
+};
 
 export default PropertyCard;
