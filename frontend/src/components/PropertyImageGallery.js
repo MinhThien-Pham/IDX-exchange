@@ -20,15 +20,11 @@ function PropertyImageGallery({ photos, address }) {
             }
 
             if (event.key === 'ArrowLeft') {
-                setLightboxIndex((index) =>
-                    index === 0 ? photoList.length - 1 : index - 1
-                );
+                setLightboxIndex((index) => (index === 0 ? photoList.length - 1 : index - 1));
             }
 
             if (event.key === 'ArrowRight') {
-                setLightboxIndex((index) =>
-                    index === photoList.length - 1 ? 0 : index + 1
-                );
+                setLightboxIndex((index) => (index === photoList.length - 1 ? 0 : index + 1));
             }
         }
 
@@ -40,11 +36,7 @@ function PropertyImageGallery({ photos, address }) {
     }, [lightboxOpen, photoList.length]);
 
     if (photoList.length === 0) {
-        return (
-            <div className="gallery-placeholder">
-                No Photos Available
-            </div>
-        );
+        return <div className="gallery-placeholder">No Photos Available</div>;
     }
 
     function openLightbox(index) {
@@ -55,17 +47,13 @@ function PropertyImageGallery({ photos, address }) {
     function showPrevious(event) {
         event.stopPropagation();
 
-        setLightboxIndex((index) =>
-            index === 0 ? photoList.length - 1 : index - 1
-        );
+        setLightboxIndex((index) => (index === 0 ? photoList.length - 1 : index - 1));
     }
 
     function showNext(event) {
         event.stopPropagation();
 
-        setLightboxIndex((index) =>
-            index === photoList.length - 1 ? 0 : index + 1
-        );
+        setLightboxIndex((index) => (index === photoList.length - 1 ? 0 : index + 1));
     }
 
     return (
@@ -97,8 +85,9 @@ function PropertyImageGallery({ photos, address }) {
                     {photoList.map((photo, index) => (
                         <button
                             type="button"
-                            className={`gallery-thumbnail-button ${index === activeIndex ? 'active' : ''
-                                }`}
+                            className={`gallery-thumbnail-button ${
+                                index === activeIndex ? 'active' : ''
+                            }`}
                             key={`${photo}-${index}`}
                             onClick={() => setActiveIndex(index)}
                         >
