@@ -1,6 +1,7 @@
 import './Pagination.css';
 
 export function getPageItems(currentPage, totalPages) {
+    // Limit long page ranges while keeping the first, nearby, and last pages accessible.
     if (totalPages <= 7) {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
     }

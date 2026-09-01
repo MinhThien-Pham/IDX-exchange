@@ -33,6 +33,8 @@ describe('fetchProperties', () => {
     });
 
     test('throws error on failed request', async () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+
         fetch.mockResolvedValueOnce({
             ok: false,
             status: 500,
@@ -40,6 +42,8 @@ describe('fetchProperties', () => {
         });
 
         await expect(fetchProperties()).rejects.toThrow('HTTP 500');
+
+        consoleError.mockRestore();
     });
 
     test('builds query string correctly with multiple params', async () => {
