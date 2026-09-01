@@ -82,7 +82,7 @@ cd frontend
 npm install
 ```
 
-Google Maps support uses the following optional environment variable:
+The map feature uses a Google Maps API key. Create a frontend/.env file with:
 
 ```env
 REACT_APP_GOOGLE_MAPS_API_KEY=your_key_here
@@ -395,7 +395,6 @@ Coverage can be generated independently for the backend and frontend using the c
 
 ## Known Issues And Future Improvements
 
-- Google Maps requires a valid `REACT_APP_GOOGLE_MAPS_API_KEY`.
 - User authentication is not implemented.
 - Saved searches are not currently supported.
 - Future improvements could include cloud deployment, broader map-based search, saved searches, and richer open house calendar views.
@@ -414,12 +413,6 @@ Coverage can be generated independently for the backend and frontend using the c
 - Confirm the backend is running on `http://localhost:5000`.
 - Confirm the frontend proxy points to `http://localhost:5000`.
 - Restart the React development server after changing environment variables or `package.json`.
-
-### Google Maps Does Not Load
-
-- Confirm `REACT_APP_GOOGLE_MAPS_API_KEY` is configured.
-- Confirm the API key is valid and has the required Google Maps API enabled.
-- Restart the frontend after changing its environment variables.
 
 ### Tests Fail After Dependency Changes
 
