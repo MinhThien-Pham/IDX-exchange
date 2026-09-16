@@ -51,4 +51,17 @@ describe('PropertyCard', () => {
             },
         });
     });
+
+    test('pressing Enter on the card navigates to the property detail path', () => {
+        renderCard();
+
+        const card = screen.getByRole('link', { name: /view 123 canon drive/i });
+        fireEvent.keyDown(card, { key: 'Enter' });
+
+        expect(mockNavigate).toHaveBeenCalledWith('/property/1001', {
+            state: {
+                listingsState: undefined,
+            },
+        });
+    });
 });
