@@ -1,9 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-const pool = require('./db/mysql');
-const propertiesRouter = require('./routes/properties');
+const pool = require("./db/mysql");
+const propertiesRouter = require("./routes/properties");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,39 +12,39 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-    const start = Date.now();
+  const start = Date.now();
 
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        const timestamp = new Date().toISOString();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    const timestamp = new Date().toISOString();
 
-        console.log(
-            `[${timestamp}] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`
-        );
+    console.log(
+      `[${timestamp}] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`,
+    );
+  });
+
+  next();
+});
+
+app.get("/api/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({
+      status: "ok",
+      database: "connected",
     });
-
-    next();
+  } catch (error) {
+    console.error("Health check failed:", error);
+    res.status(500).json({
+      status: "error",
+      database: "disconnected",
+      message: error.message,
+    });
+  }
 });
 
-app.get('/api/health', async (req, res) => {
-    try {
-        await pool.query('SELECT 1');
-        res.json({
-            status: 'ok',
-            database: 'connected',
-        });
-    } catch (error) {
-        console.error('Health check failed:', error);
-        res.status(500).json({
-            status: 'error',
-            database: 'disconnected',
-            message: error.message,
-        });
-    }
-});
-
-app.use('/api/properties', propertiesRouter);
+app.use("/api/properties", propertiesRouter);
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

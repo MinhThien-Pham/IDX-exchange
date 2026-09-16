@@ -7,9 +7,7 @@ function BrokenComponent() {
 
 describe('ErrorBoundary', () => {
     test('shows recovery UI when a child crashes', () => {
-        const consoleError = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => { });
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
         render(
             <ErrorBoundary>

@@ -1,18 +1,6 @@
+import { buildQueryString } from '../utils/api-helpers';
+
 const API_BASE = '';
-
-function buildQueryString(params = {}) {
-    const cleanParams = {};
-
-    Object.keys(params).forEach((key) => {
-        const value = params[key];
-
-        if (value !== undefined && value !== null && value !== '') {
-            cleanParams[key] = value;
-        }
-    });
-
-    return new URLSearchParams(cleanParams).toString();
-}
 
 export async function fetchProperties(params = {}) {
     try {

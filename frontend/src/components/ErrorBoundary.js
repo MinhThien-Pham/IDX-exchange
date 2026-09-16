@@ -17,11 +17,7 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error(
-            'Error caught by boundary:',
-            error,
-            errorInfo
-        );
+        console.error('Error caught by boundary:', error, errorInfo);
     }
 
     render() {
@@ -31,17 +27,9 @@ class ErrorBoundary extends React.Component {
                     <div className="error-boundary-box">
                         <h1>Something went wrong</h1>
 
-                        <p>
-                            Please refresh the page and try
-                            again.
-                        </p>
+                        <p>Please refresh the page and try again.</p>
 
-                        <button
-                            type="button"
-                            onClick={() =>
-                                window.location.reload()
-                            }
-                        >
+                        <button type="button" onClick={() => window.location.reload()}>
                             Refresh Page
                         </button>
                     </div>

@@ -1,20 +1,8 @@
+import { formatPrice } from '../utils/formatting';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import PropertyImageCarousel from './PropertyImageCarousel';
 import './PropertyCard.css';
-
-function formatPrice(price) {
-    const numberPrice = Number(price);
-
-    if (Number.isNaN(numberPrice)) {
-        return 'Price unavailable';
-    }
-
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-    }).format(numberPrice);
-}
 
 function PropertyCard({ property, listingsState }) {
     const navigate = useNavigate();
@@ -28,10 +16,7 @@ function PropertyCard({ property, listingsState }) {
     }
 
     function handleKeyDown(event) {
-        if (
-            event.target === event.currentTarget &&
-            event.key === 'Enter'
-        ) {
+        if (event.target === event.currentTarget && event.key === 'Enter') {
             openProperty();
         }
     }
@@ -46,24 +31,16 @@ function PropertyCard({ property, listingsState }) {
             aria-label={`View ${property.L_Address || 'property'}`}
         >
             <div className="property-image-wrapper">
-                <PropertyImageCarousel
-                    photos={property.L_Photos}
-                    address={property.L_Address}
-                />
+                <PropertyImageCarousel photos={property.L_Photos} address={property.L_Address} />
             </div>
 
             <div className="property-card-content">
-                <h2 className="property-price">
-                    {formatPrice(property.L_SystemPrice)}
-                </h2>
+                <h2 className="property-price">{formatPrice(property.L_SystemPrice)}</h2>
 
-                <p className="property-address">
-                    {property.L_Address || 'Address unavailable'}
-                </p>
+                <p className="property-address">{property.L_Address || 'Address unavailable'}</p>
 
                 <p className="property-location">
-                    {property.L_City || 'Unknown City'},{' '}
-                    {property.L_State || 'Unknown State'}
+                    {property.L_City || 'Unknown City'}, {property.L_State || 'Unknown State'}
                 </p>
 
                 <div className="property-stats">
@@ -75,5 +52,32 @@ function PropertyCard({ property, listingsState }) {
         </div>
     );
 }
+
+PropertyCard.propTypes = {
+    property: PropTypes.shape({
+        L_ListingID: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+
+        L_SystemPrice: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+
+        L_Address: PropTypes.string,
+        L_City: PropTypes.string,
+        L_State: PropTypes.string,
+
+        L_Keyword2: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+
+        LM_Dec_3: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+
+        LM_Int2_3: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+
+        L_Photos: PropTypes.oneOfType([PropTypes.string, PropTypes.arrayOf(PropTypes.string)]),
+    }).isRequired,
+
+    listingsState: PropTypes.shape({
+        filters: PropTypes.object,
+        currentPage: PropTypes.number,
+        sortBy: PropTypes.string,
+        sortOrder: PropTypes.oneOf(['ASC', 'DESC']),
+    }),
+};
 
 export default PropertyCard;
