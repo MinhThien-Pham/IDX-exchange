@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+sql/
+backup/
+data/
+output/
+/.*/
+!/.github/
+.vercel/
+*.sql
+*.log
+package-lock.json
+frontend/public/
+test-results/
+playwright-report/

@@ -1,7 +1,32 @@
+# Dependencies and build output
 node_modules/
+dist/
+build/
+.vercel/
+*.tsbuildinfo
+
+# Environment files (only the documented examples are committed)
 .env
+.env.*
+!.env.example
+
+# Source data and dumps stay outside Git
 *.sql
 *.csv
 *.xlsx
-data/
+/data/
+/sql/
+/backup/
+
+# Generated reports and local tool output
 coverage/
+playwright-report/
+test-results/
+*.log
+/output/
+
+# Reviewed schema migrations are the only committed SQL.
+!backend/db/migrations/*.sql
+
+# Local-only notes
+*-local/

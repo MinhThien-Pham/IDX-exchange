@@ -1,0 +1,65 @@
+{
+  "name": "idx-exchange",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": "24.x",
+    "npm": ">=11"
+  },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.3.2"
+    }
+  },
+  "scripts": {
+    "dev": "npm run build -w @idx/contracts && concurrently -k -n api,web \"npm run dev -w @idx/api\" \"npm run dev -w @idx/web\"",
+    "build": "npm run build -w @idx/contracts && npm run build -w @idx/api && npm run build -w @idx/web",
+    "typecheck": "npm run build -w @idx/contracts && npm run typecheck --workspaces --if-present && tsc -p tsconfig.tools.json",
+    "lint": "eslint . --max-warnings 0 && npm run check:boundaries",
+    "test": "npm run build -w @idx/contracts && npm run test -w @idx/api && npm run test -w @idx/web",
+    "test:coverage": "npm run build -w @idx/contracts && npm run test:coverage -w @idx/api && npm run test:coverage -w @idx/web",
+    "test:integration": "npm run build -w @idx/contracts && npm run test:integration -w @idx/api",
+    "test:e2e": "npm run build && playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run typecheck && npm run build && npm run format:check",
+    "verify": "npm run check && npm test",
+    "verify:ci": "npm run check && npm run test:coverage",
+    "db:migrate": "npm run db:migrate -w @idx/api",
+    "db:seed": "npm run db:seed -w @idx/api",
+    "db:import": "npm run db:import-mls -w @idx/api --",
+    "check:boundaries": "node --test scripts/architecture-rules.test.mjs && node scripts/check-boundaries.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@swc/core": "^1.16.18",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.19.2",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.71.2"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "@swc/core@1.16.18": true,
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true
+  }
+}
