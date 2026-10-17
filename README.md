@@ -1,429 +1,108 @@
-# IDX Property Search Application
+# IDX Exchange
 
-Full-stack property search application built for the IDX Exchange SDE Internship. The application lets users search MLS-style property listings, filter and sort results, browse paginated listings, view property details and photo galleries, see mapped locations, and review open house information.
+Residential property search built with **PostgreSQL, Express, React and Node.js (PERN)** in
+TypeScript. Visitors search listings by location, budget, rooms and home type, sort and page
+through results, and open a listing to see its photos, facts, location and open houses.
 
-## Screenshot
-
-![IDX property listings screenshot](frontend/public/listings-page-screenshot.png)
-
-## Tech Stack
-
-- Frontend: React 19.2, React Router 7.18, React Testing Library, Create React App
-- Backend: Node.js, Express 5.2, mysql2, cors, dotenv
-- Database: MySQL 8
-- Testing: Jest, Supertest, React Testing Library
-- Tooling: ESLint, Prettier
+Developed individually for the **IDX Exchange Software Development Engineer Internship (Summer 2026)**. The project is a TypeScript monorepo with a modular Express API, PostgreSQL and shared
+API contracts, deployed to Vercel and Neon.
 
 ## Features
 
-- Property search by city, ZIP code, price range, bedrooms, and bathrooms
-- Server-side pagination
-- Sorting by price, listing date, square footage, and bedrooms
-- Property detail pages with summary information and descriptions
-- Property photo carousel and detail gallery
-- Property locations displayed with Google Maps
-- Open house information
-- Error boundary recovery UI for frontend rendering failures
-- Backend request logging with status codes and response times
-- Input validation and parameterized database queries
+- **Search**: one "City or ZIP code" field with city suggestions from the inventory, price range,
+  minimum bedrooms and bathrooms, and a home-type filter (Single-family, Condo, Townhouse and
+  others).
+- **Results**: eight sort orders, stable server-side pagination, removable filter chips, and
+  shareable URLs that restore the same search after a refresh or a browser Back.
+- **Listing detail**: photo gallery with a full-screen viewer, key facts, price per square foot,
+  map or directions link, and open houses labeled by their status in the property's time zone.
+- **Responsive layout**: sticky desktop toolbar with a filter sidebar, and a phone layout with a
+  bottom action bar and filter sheet. Light and dark themes are available.
+- **Recovery paths**: invalid searches, empty results, failed requests, missing photos and
+  unavailable listings each show a clear message and a next step.
+- **Read-only, versioned API** (`/api/v1`) with request validation, structured errors, request
+  IDs and an OpenAPI document.
 
-## Local Setup
+## Data
 
-### Prerequisites
+Production data is a historical MLS (RETS) snapshot supplied by the internship program:
+approximately 54,000 residential listings, mostly in California, with their recorded open houses.
+It is imported into PostgreSQL once and is **not a live MLS feed**. Prices, availability and
+open-house dates reflect the time of the export. Local development uses 12 invented demo
+listings instead. See [Data import](docs/data-import.md).
 
-Install the following before running the project:
+## Tech stack
 
-- Node.js 18 or newer
-- npm
-- MySQL 8
-- Git
+| Area         | Technology                                                   |
+| ------------ | ------------------------------------------------------------ |
+| Web          | React 19, React Router 7, Vite, Lucide icons                 |
+| Server state | TanStack Query                                               |
+| API          | Node.js 24, Express 5                                        |
+| Contracts    | Zod schemas shared by the API and the web app                |
+| Database     | PostgreSQL (18 in CI), Drizzle ORM, `pg`                     |
+| Tests        | Jest, Supertest, React Testing Library, Playwright, axe-core |
+| Hosting      | Vercel (two projects), Neon PostgreSQL                       |
 
-### Clone the Repository
+## Getting started
 
-```bash
-git clone <repository-url>
-cd IDX-Exchange
+Requires Node.js 24, npm 11 or newer, and a PostgreSQL database.
+
+```sh
+npm ci
+cp backend/.env.example backend/.env    # set DATABASE_URL
+cp frontend/.env.example frontend/.env
+npm run db:migrate
+npm run db:seed                         # 12 invented listings and 3 open houses
+npm run dev                             # web on :5173, API on :5000
 ```
 
-### Configure the Backend
+| Command             | Purpose                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `npm run dev`       | Start the API and the web app in watch mode                   |
+| `npm run verify`    | Lint, architecture checks, typecheck, build, format and tests |
+| `npm test`          | API and web unit, component and HTTP tests                    |
+| `npm run test:e2e`  | Playwright browser tests against a real API and test database |
+| `npm run db:import` | Import the MLS MySQL dataset (dry run unless `--write`)       |
 
-Navigate to the backend directory and install dependencies:
+Full setup, environment variables and troubleshooting: [Getting started](docs/getting-started.md).
 
-```bash
-cd backend
-npm install
+## Architecture in brief
+
+```
+React feature ─▶ query hook ─▶ API adapter ──HTTP /api/v1──▶ route ─▶ Zod validation ─▶ controller
+                                                                                        │
+                                                                                        ▼
+                                          PostgreSQL ◀── repository (Drizzle) ◀── use case
+                                                          implements port ──────────▲
 ```
 
-Create a `backend/.env` file with your local database configuration:
-
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_mysql_user
-DB_PASSWORD=your_mysql_password
-DB_NAME=rets
-PORT=5000
-```
-
-Start the backend:
-
-```bash
-npm run dev
-```
-
-The API runs at `http://localhost:5000`.
-
-### Configure the Frontend
-
-From the project root:
-
-```bash
-cd frontend
-npm install
-```
-
-The map feature uses a Google Maps API key. Create a frontend/.env file with:
-
-```env
-REACT_APP_GOOGLE_MAPS_API_KEY=your_key_here
-```
-
-Start the frontend:
-
-```bash
-npm start
-```
-
-The application runs at `http://localhost:3000`.
-
-The frontend proxies API requests to the backend running on port `5000`.
-
-## Running Tests
-
-### Backend
-
-```bash
-cd backend
-npm test
-```
-
-Run backend tests with coverage:
-
-```bash
-npm run test:coverage
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm test -- --watchAll=false
-```
-
-Run frontend tests with coverage:
-
-```bash
-npm test -- --coverage --watchAll=false
-```
-
-### Lint
-
-```bash
-cd frontend
-npm run lint
-```
-
-### Format
-
-```bash
-cd frontend
-npm run format
-```
-
-## Project Structure
-
-```text
-IDX-Exchange/
-|-- backend/
-|   |-- src/
-|   |   |-- db/
-|   |   |-- routes/
-|   |   `-- index.js
-|   |-- tests/
-|   `-- package.json
-|-- frontend/
-|   |-- public/
-|   |-- src/
-|   |   |-- api/
-|   |   |-- components/
-|   |   |-- hooks/
-|   |   |-- pages/
-|   |   `-- utils/
-|   `-- package.json
-|-- .gitignore
-`-- README.md
-```
-
-## Architecture
-
-The application follows a client-server architecture:
-
-```text
-React Frontend
-      |
-      | HTTP / REST
-      v
-Express Backend
-      |
-      | SQL
-      v
-MySQL Database
-```
-
-The React frontend handles the user interface, listing filters, sorting, pagination, property detail navigation, and display state.
-
-The Express backend exposes REST API endpoints and is responsible for validating request parameters, constructing database queries, retrieving property data, and returning JSON responses.
-
-MySQL stores the property and open house data. The frontend never connects directly to the database, keeping database credentials and query logic on the server.
-
-### Query Safety
-
-User-provided filter values are passed through mysql2 placeholders instead of being directly inserted into SQL queries.
-
-Sorting is handled separately because SQL column names cannot be parameterized using placeholders. The backend validates `sortBy` against a fixed whitelist of supported property columns before adding the selected column to the query.
-
-### Frontend State
-
-`ListingsPage` manages listing filters, sorting, pagination, and listing-page state.
-
-When a user opens a property detail page and returns to the listings, React Router location state restores the previous listing context. Page changes preserve the active sorting configuration, while applying new filters resets pagination and sorting.
-
-### Error Handling
-
-The frontend includes an `ErrorBoundary` component to provide a recovery UI when a React rendering error occurs.
-
-API requests also handle unsuccessful HTTP responses and surface errors to the frontend rather than silently failing.
-
-## Database Schema Summary
-
-### `rets_property`
-
-Primary table containing property listings.
-
-Important fields used by the application:
-
-- `L_ListingID`: unique listing identifier used by property detail routes
-- `L_SystemPrice`: listing price
-- `L_Address`: street address
-- `L_City`: city
-- `L_State`: state
-- `L_Zip`: ZIP code
-- `L_Keyword2`: bedroom count
-- `LM_Dec_3`: bathroom count
-- `LM_Int2_3`: square footage
-- `ListingContractDate`: listing date
-- `L_Photos`: property photo data
-- `LMD_MP_Latitude`: property latitude
-- `LMD_MP_Longitude`: property longitude
-
-### `rets_openhouse`
-
-Contains open house information associated with property listings.
-
-Important fields used by the application:
-
-- `L_ListingID`: associates an open house with a property
-- `OpenHouseDate`: scheduled open house date
-- `OH_StartTime`: start time
-- `OH_EndTime`: end time
-- `all_data`: additional open house data, including remarks when available
-
-## API Reference
-
-### `GET /api/health`
-
-Checks API and database connectivity.
-
-Example response:
-
-```json
-{
-  "status": "ok",
-  "database": "connected"
-}
-```
-
-### `GET /api/properties`
-
-Returns a paginated collection of property listings.
-
-Supported query parameters:
-
-- `limit`: number of results to return, from `1` to `100`; default `20`
-- `offset`: number of results to skip; default `0`
-- `city`: city filter
-- `zipcode`: ZIP code filter
-- `minPrice`: minimum listing price
-- `maxPrice`: maximum listing price
-- `beds`: minimum number of bedrooms
-- `baths`: minimum number of bathrooms
-- `sortBy`: `L_SystemPrice`, `ListingContractDate`, `LM_Int2_3`, or `L_Keyword2`
-- `sortOrder`: `ASC` or `DESC`
-
-Example request:
-
-```http
-GET /api/properties?city=Beverly%20Hills&minPrice=500000&beds=3&sortBy=L_SystemPrice&sortOrder=DESC
-```
-
-Example response:
-
-```json
-{
-  "total": 42,
-  "limit": 20,
-  "offset": 0,
-  "results": [
-    {
-      "L_ListingID": "123456",
-      "L_City": "Beverly Hills",
-      "L_SystemPrice": 1250000
-    }
-  ]
-}
-```
-
-Invalid query parameters return HTTP `400`.
-
-Example:
-
-```json
-{
-  "error": "Invalid sortBy field"
-}
-```
-
-### `GET /api/properties/:id`
-
-Returns the property associated with the provided `L_ListingID`.
-
-Example request:
-
-```http
-GET /api/properties/123456
-```
-
-Example response:
-
-```json
-{
-  "L_ListingID": "123456",
-  "L_Address": "123 Canon Drive",
-  "L_City": "Beverly Hills",
-  "L_SystemPrice": 1250000
-}
-```
-
-If the property does not exist, the endpoint returns HTTP `404`.
-
-```json
-{
-  "error": "Property not found",
-  "message": "No property exists with ID: 123456"
-}
-```
-
-### `GET /api/properties/:id/openhouses`
-
-Returns open house records for a property.
-
-Example request:
-
-```http
-GET /api/properties/123456/openhouses
-```
-
-Example response:
-
-```json
-[
-  {
-    "L_ListingID": "123456",
-    "OpenHouseDate": "2026-09-10",
-    "OH_StartTime": "13:00:00",
-    "OH_EndTime": "16:00:00",
-    "all_data": "{\"OpenHouseRemarks\":\"Hosted tour.\"}"
-  }
-]
-```
-
-If the property exists but has no open houses, the endpoint returns an empty array:
-
-```json
-[]
-```
-
-If the property does not exist, the endpoint returns HTTP `404`.
-
-## Testing Strategy
-
-The project uses automated tests for both backend API behavior and frontend components.
-
-### Backend Tests
-
-Backend route tests use Jest and Supertest with the database layer mocked. Tests cover:
-
-- Paginated property responses
-- Property filters
-- Sorting validation
-- Invalid query parameters
-- Property detail responses
-- Missing and invalid property IDs
-- Open house responses
-- Properties without open houses
-
-### Frontend Tests
-
-Frontend tests use Jest and React Testing Library. Tests cover core UI behavior including:
-
-- Property filters
-- Pagination
-- Property cards and navigation
-- API client behavior
-
-Coverage can be generated independently for the backend and frontend using the commands in the Running Tests section.
-
-## Known Issues And Future Improvements
-
-- User authentication is not implemented.
-- Saved searches are not currently supported.
-- Future improvements could include cloud deployment, broader map-based search, saved searches, and richer open house calendar views.
-
-## Troubleshooting
-
-### Backend Cannot Connect to MySQL
-
-- Confirm MySQL is running.
-- Verify the database name and credentials in `backend/.env`.
-- Confirm MySQL is listening on the configured `DB_PORT`.
-- Restart the backend after changing environment variables.
-
-### Frontend API Requests Fail
-
-- Confirm the backend is running on `http://localhost:5000`.
-- Confirm the frontend proxy points to `http://localhost:5000`.
-- Restart the React development server after changing environment variables or `package.json`.
-
-### Tests Fail After Dependency Changes
-
-Run:
-
-```bash
-npm install
-```
-
-in the affected `backend` or `frontend` directory, then run the tests again.
-
-## License
-
-This project was created for educational purposes as part of the IDX Exchange internship program.
+- The API is a **modular monolith**. `listings` and `open-houses` each have `domain`,
+  `application` (use cases and repository ports), `infrastructure` (PostgreSQL) and
+  `presentation` (routes and controllers) layers.
+- Use cases depend on repository **interfaces**. The composition root supplies the PostgreSQL
+  implementations, and API tests supply in-memory ones.
+- Controllers are wrapped by one `asyncHandler`. A central error handler maps business errors to
+  HTTP status codes, so controllers contain no `try/catch`.
+- `packages/contracts` holds the Zod schemas for requests, responses and errors. The API
+  validates input with them and the web app validates every response with them.
+- The web app is organized by feature (`api`, `hooks`, `model`, `components`). Pages compose
+  features through their public `index.ts`.
+- `npm run check:boundaries` parses imports and fails the build when a dependency points the
+  wrong way.
+
+## Documentation
+
+| Document                                       | Contents                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| [Getting started](docs/getting-started.md)     | Requirements, setup, environment, commands, troubleshooting   |
+| [Product requirements](docs/prd.md)            | Problem, users, scope, requirements, acceptance criteria      |
+| [Business rules](docs/business-rules.md)       | Search, filters, sorting, pagination, display and open houses |
+| [Architecture](docs/architecture.md)           | Layers, request pipeline, errors, security, frontend design   |
+| [Project structure](docs/project-structure.md) | Folder map, module anatomy, naming, where to change what      |
+| [API reference](docs/api.md)                   | Endpoints, parameters, responses and error codes              |
+| [Database (ERD)](docs/erd.md)                  | Tables, columns, constraints, indexes and migrations          |
+| [UI guidelines](docs/ui-guidelines.md)         | Visual design, responsive layouts and accessibility           |
+| [Testing](docs/testing.md)                     | Test layers, coverage gates and CI                            |
+| [Deployment](docs/deployment.md)               | Neon and Vercel setup, environment variables, smoke tests     |
+| [Data import](docs/data-import.md)             | Dataset, MLS MySQL import and normalization rules             |
+| [Decisions](docs/decisions.md)                 | Architecture decision records                                 |
