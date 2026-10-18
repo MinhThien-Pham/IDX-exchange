@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { House, RotateCcw, Search, SlidersHorizontal, WifiOff } from 'lucide-react';
 import { type SearchListingsQuery } from '@idx/contracts';
-import heroPhoto from '../../../assets/bonsall-home.jpg';
+import heroPhoto from '../../../assets/san-dimas-home.jpg';
 import Pagination from '../../../shared/ui/Pagination';
 import Modal from '../../../shared/ui/Modal';
 import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
@@ -77,7 +77,7 @@ export default function ListingsView() {
           <div className="hero-photo">
             <img
               src={heroPhoto}
-              alt="A home with a garden and driveway in Bonsall, California"
+              alt="A two-story home surrounded by trees and a lawn in San Dimas, California"
               fetchPriority="high"
             />
           </div>
