@@ -3,6 +3,7 @@ import ListingsPage from '../pages/ListingsPage';
 import PropertyDetailPage from '../pages/PropertyDetailPage';
 import ErrorBoundary from '../shared/ui/ErrorBoundary';
 import AppProviders from './providers';
+import AppLayout from './AppLayout';
 
 export default function App() {
   return (
@@ -10,17 +11,19 @@ export default function App() {
       <AppProviders>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<ListingsPage />} />
-            <Route path="/property/:id" element={<PropertyDetailPage />} />
-            <Route
-              path="*"
-              element={
-                <main className="listings-page">
-                  <h1>Page not found</h1>
-                  <a href="/">Browse properties</a>
-                </main>
-              }
-            />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<ListingsPage />} />
+              <Route path="/property/:id" element={<PropertyDetailPage />} />
+              <Route
+                path="*"
+                element={
+                  <main id="main-content" className="page-container page-message">
+                    <h1>Page not found</h1>
+                    <a href="/">Browse properties</a>
+                  </main>
+                }
+              />
+            </Route>
           </Routes>
         </BrowserRouter>
       </AppProviders>

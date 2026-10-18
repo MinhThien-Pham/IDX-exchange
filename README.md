@@ -19,6 +19,16 @@ This TypeScript monorepo contains a React/Vite web app, a modular Express API, a
 
 The project uses React directly; Next.js and NestJS are not required.
 
+## Product and interface
+
+The Pacific design uses navy surfaces with peach-orange accents and an explicit light/dark switch. Primary actions and selected controls share the same orange fill and navy text in both themes. A location draft is submitted with Search or Enter; it does not request listings on every keystroke. The single City or ZIP field recognizes US ZIP/ZIP+4 strings, while existing shared URLs can retain both location parameters.
+
+Desktop keeps location, Search, Filters and Sort in one sticky toolbar. Medium desktop layouts toggle a sidebar and two/three result columns; wide layouts pin the sidebar. Phone search/filter/sort controls open in a bottom sheet, with Cancel and Show homes at its lower edge. Pagination and detail return/photo actions stay near the bottom, including phone landscape layouts.
+
+The results heading uses the API total with **All locations** until a city or ZIP is selected. Desktop also shows a range near pagination. Cards and details show price per square foot only when price and living area are positive and available. Detail photos use numeric counters, native horizontal scrolling, keyboard controls and a focused viewer with device-appropriate navigation. Missing facts, failed images, empty results and request errors have recovery paths.
+
+Read the [product requirements](product/PRD.md), [architecture guide](architecture/README.md), [ERD/data dictionary](architecture/data-model.md), [decisions](architecture/decisions.md) and [testing guide](architecture/testing.md). Local progressive learning lessons and design-review outputs remain outside Git.
+
 ## Architecture
 
 The backend is a **modular monolith**: one API with separate `listings` and `open-houses` business modules. Each module follows a small Clean Architecture structure.
@@ -69,7 +79,7 @@ IDX-Exchange/
 │   │   ├── app/                    # Router and providers
 │   │   ├── pages/                  # Page composition
 │   │   ├── features/
-│   │   │   ├── listings/           # Components, hooks, API adapters
+│   │   │   ├── listings/           # Components, pure models, hooks, API adapters
 │   │   │   └── open-houses/
 │   │   └── shared/                 # HTTP client, UI, formatting, config
 │   └── vercel.json
@@ -93,6 +103,8 @@ IDX-Exchange/
 │   ├── tests/
 │   └── vercel.json
 ├── packages/contracts/             # Shared API DTOs and Zod schemas
+├── architecture/                   # Public architecture, ERD, decisions, testing
+├── product/                        # Product scope and requirements
 ├── e2e/                            # Real browser flows
 ├── scripts/check-boundaries.mjs
 ├── .github/workflows/ci.yml
@@ -342,7 +354,7 @@ Run from the repository root:
 npm run verify
 ```
 
-This runs lint/boundary checks, TypeScript checks, Jest tests, production builds, and formatting checks. Individual commands are `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run format:check`. `npm run format` writes formatting changes.
+This runs lint/boundary checks, TypeScript checks, Jest tests, production builds, and formatting checks. `npm run check` runs the static/build/format checks without tests. Individual commands are `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run format:check`. `npm run format` writes formatting changes.
 
 ### Real PostgreSQL integration
 
@@ -357,6 +369,8 @@ npm run test:integration
 
 Without `TEST_DATABASE_URL`, the PostgreSQL suite is skipped; unit, normalization, HTTP, and frontend tests still run. With it, tests exercise migrations, real query filtering/sorting, decimals, foreign keys, UUID lookups, idempotent seed/import upserts, and constraints. API test doubles do not replace these database checks.
 
+For the full measured coverage check, supply that isolated database and run `npm run test:coverage` or `npm run verify:ci`. These enforce the API and frontend thresholds documented in the [testing guide](architecture/testing.md). Generated coverage reports stay outside Git. The full backend coverage baseline requires the PostgreSQL tests rather than a skipped suite.
+
 ### Browser tests
 
 ```powershell
@@ -365,15 +379,17 @@ $env:E2E_DATABASE_URL = 'postgresql://idx_app:your_password@localhost:5432/idx_t
 npm run test:e2e
 ```
 
-The command builds the application. Global setup checks the isolated database name, applies migrations, and upserts the synthetic seed. Playwright starts the built API and Vite preview server and checks search/filter/pagination/detail flows against the real API/database. Keep ports 5000 and 4173 free.
+The command builds the application. Global setup checks the isolated database name, applies migrations, and upserts the synthetic seed. Playwright starts the built API and Vite preview server and checks search/filter/pagination/detail flows against the real API/database, sticky desktop controls, phone portrait/landscape, gallery focus and scroll return, and axe accessibility checks in light/dark and modal states. Keep ports 5000 and 4173 free.
 
 If Microsoft Edge is installed, `$env:PLAYWRIGHT_CHANNEL = 'msedge'` selects it as a local alternative. CI installs Chromium. See [playwright.config.ts](playwright.config.ts).
 
-[GitHub Actions](.github/workflows/ci.yml) provisions PostgreSQL 17, runs `npm run verify` with database integration enabled, and runs browser tests. It does not run migrations against Neon; Vercel manages deployments separately.
+[GitHub Actions](.github/workflows/ci.yml) provisions PostgreSQL 17, runs `npm run verify:ci` with database integration and coverage gates, then runs browser tests against the existing build. It does not run migrations against Neon; Vercel manages deployments separately.
 
-At the time of this refactor, `npm audit --omit=dev` reports no production vulnerabilities. The full audit reports 19 moderate development-tooling findings through Jest's transitive `sprintf-js` dependency, with no patched release available. Recheck when dependencies change; a forced dependency downgrade is not applied.
+The dependency update was checked with `npm audit`, which reported zero findings. A scoped override moves the coverage tool's YAML parser to a compatible js-yaml 4 release and removes its old argparse/sprintf-js chain without downgrading Jest. See the [decision record](architecture/decisions.md). Recheck audit results when dependencies change.
 
 ## Import the original MySQL dataset
+
+Imported listings come from a historical local export, not a live MLS feed. The reviewed property dump was generated on August 14, 2026; its listing availability and recorded open house schedules may have changed. The interface uses normal property browsing language and does not repeat dataset notices on each screen. Source status and event dates should be interpreted in that historical context.
 
 Runtime requires only PostgreSQL. `mysql2` is a development-only dependency for a one-time migration bridge.
 

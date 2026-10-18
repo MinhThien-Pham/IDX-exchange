@@ -1,6 +1,25 @@
+import { useState } from 'react';
+import {
+  ArrowLeft,
+  Bath,
+  BedDouble,
+  CalendarDays,
+  Images,
+  MapPin,
+  Ruler,
+  RotateCcw,
+} from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { config } from '../../../shared/config';
-import { formatPrice } from '../../../shared/utils/formatting';
+import { ApiError } from '../../../shared/api/client';
+import {
+  formatListingDate,
+  formatPrice,
+  formatPricePerSquareFoot,
+  formatPropertyLocation,
+} from '../../../shared/utils/formatting';
+import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
+import { usePageScroll } from '../../../shared/hooks/usePageScroll';
 import { useListing } from '../hooks/useListings';
 import OpenHouses from '../../open-houses/components/OpenHouses';
 import PropertyImageGallery from './PropertyImageGallery';
@@ -12,129 +31,179 @@ export default function PropertyDetailView() {
   const navigate = useNavigate();
   const location = useLocation();
   const query = useListing(id);
+  const compact = useMediaQuery(compactLayoutQuery);
+  const [photosOpen, setPhotosOpen] = useState(false);
+  usePageScroll(!query.isPending);
   const from: unknown = location.state?.from;
   const back = () => {
     if (typeof from === 'string' && /^\/(?:\?|$)/.test(from)) navigate(-1);
     else navigate('/');
   };
-
-  if (query.isPending)
-    return (
-      <main className="property-detail-page">
-        <p className="detail-loading" role="status">
-          Loading property details...
-        </p>
-      </main>
-    );
-  if (query.isError)
-    return (
-      <main className="property-detail-page">
-        <div className="detail-error" role="alert">
-          <h1>Unable to load property</h1>
-          <p>{query.error.message}</p>
-          <button onClick={back}>Back to Listings</button>
-        </div>
-      </main>
-    );
-
   const property = query.data;
+  const missing =
+    query.error instanceof ApiError && (query.error.status === 404 || query.error.status === 400);
+  const facts = property
+    ? [
+        { value: property.bedrooms, label: 'Bedrooms', Icon: BedDouble },
+        { value: property.bathrooms, label: 'Bathrooms', Icon: Bath },
+        { value: property.squareFeet, label: 'Square feet', Icon: Ruler },
+        { value: property.yearBuilt, label: 'Year built', Icon: CalendarDays },
+      ].filter((fact) => fact.value !== null)
+    : [];
+  const perFoot = property ? formatPricePerSquareFoot(property.price, property.squareFeet) : null;
   return (
-    <main className="property-detail-page">
-      <div className="property-detail-shell">
-        <button type="button" className="back-button" onClick={back}>
-          ← Back to Listings
+    <main id="main-content" className="property-detail-page page-container">
+      {!compact && (
+        <button type="button" className="button button-quiet back-button" onClick={back}>
+          <ArrowLeft aria-hidden="true" />
+          Back to listings
         </button>
-        <header className="detail-header">
-          <h1>{formatPrice(property.price)}</h1>
-          <p className="detail-address">{property.address || 'Address unavailable'}</p>
-          <p className="detail-location">
-            {property.city || 'Unknown City'}, {property.state || 'Unknown State'}{' '}
-            {property.zipcode}
+      )}
+      {query.isPending ? (
+        <>
+          <h1 className="sr-only">Property details</h1>
+          <p role="status">Loading property details…</p>
+          <div className="detail-loading-skeleton" aria-hidden="true" />
+        </>
+      ) : query.isError ? (
+        <div className="result-state" role="alert">
+          <h1>{missing ? 'This listing is unavailable.' : 'Property details couldn’t load.'}</h1>
+          <p>
+            {missing
+              ? 'The link may be incorrect or the property may no longer be included.'
+              : query.error.message}
           </p>
-        </header>
-        <div className="property-image-main">
-          <PropertyImageGallery
-            key={property.id}
-            photos={property.photos}
-            address={property.address}
-          />
+          {!missing && (
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => void query.refetch()}
+            >
+              <RotateCcw aria-hidden="true" />
+              Try again
+            </button>
+          )}
+          {!compact && (
+            <button type="button" className="button" onClick={back}>
+              Return to results
+            </button>
+          )}
         </div>
-        <div className="property-content">
-          <div className="property-main">
-            <section className="detail-stats">
-              <div>
-                <strong>{property.bedrooms ?? 'N/A'}</strong>
-                <span>Bedrooms</span>
+      ) : (
+        property && (
+          <>
+            <header className="detail-header">
+              <div className="detail-pricing">
+                <span className="detail-price">{formatPrice(property.price)}</span>
+                {perFoot && <span className="price-per-foot">{perFoot}</span>}
               </div>
-              <div>
-                <strong>{property.bathrooms ?? 'N/A'}</strong>
-                <span>Bathrooms</span>
-              </div>
-              <div>
-                <strong>{property.squareFeet?.toLocaleString() ?? 'N/A'}</strong>
-                <span>Sq Ft</span>
-              </div>
-              <div>
-                <strong>{property.yearBuilt ?? 'N/A'}</strong>
-                <span>Year Built</span>
-              </div>
-            </section>
-            <section className="detail-section">
-              <h2>Property Details</h2>
-              <div className="detail-grid">
-                {property.propertyType && (
-                  <div className="detail-item">
-                    <span>Property Type</span>
-                    <strong>{property.propertyType}</strong>
-                  </div>
+              <h1>{property.address || 'Address unavailable'}</h1>
+              <p>{formatPropertyLocation(property)}</p>
+            </header>
+            <div className="property-image-main">
+              <PropertyImageGallery
+                key={property.id}
+                photos={property.photos}
+                address={property.address}
+                open={photosOpen}
+                onOpen={() => setPhotosOpen(true)}
+                onClose={() => setPhotosOpen(false)}
+              />
+            </div>
+            <div className="property-content">
+              {facts.length > 0 && (
+                <section className="detail-stats" aria-label="Property facts">
+                  {facts.map(({ value, label, Icon }) => (
+                    <div key={label}>
+                      <strong>
+                        {label === 'Year built' ? value : value?.toLocaleString('en-US')}
+                      </strong>
+                      <span>
+                        <Icon aria-hidden="true" />
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </section>
+              )}
+              <aside className="property-sidebar">
+                <OpenHouses listingId={id} />
+              </aside>
+              <div className="property-main">
+                {facts.length < 4 && (
+                  <p className="missing-details-note">Some property details were not provided.</p>
                 )}
-                {property.propertySubType && (
-                  <div className="detail-item">
-                    <span>Property Subtype</span>
-                    <strong>{property.propertySubType}</strong>
-                  </div>
-                )}
-                {property.lotSizeAcres !== null && (
-                  <div className="detail-item">
-                    <span>Lot Size</span>
-                    <strong>{property.lotSizeAcres} acres</strong>
-                  </div>
-                )}
-                {property.parkingSpaces !== null && (
-                  <div className="detail-item">
-                    <span>Parking Spaces</span>
-                    <strong>{property.parkingSpaces}</strong>
-                  </div>
-                )}
-                <div className="detail-item">
-                  <span>Listing ID</span>
-                  <strong>{property.externalId}</strong>
-                </div>
+                <section className="detail-section">
+                  <h2>Take a closer look</h2>
+                  <p className="detail-description">
+                    {property.description || 'No property description was provided.'}
+                  </p>
+                </section>
+                <section className="detail-section">
+                  <h2>Property details</h2>
+                  <dl className="detail-definition">
+                    {[
+                      ['Property type', property.propertyType],
+                      ['Property subtype', property.propertySubType],
+                      [
+                        'Lot size',
+                        property.lotSizeAcres !== null ? `${property.lotSizeAcres} acres` : null,
+                      ],
+                      ['Parking spaces', property.parkingSpaces],
+                      ['Listing ID', property.externalId],
+                      ['Listed', property.listedAt ? formatListingDate(property.listedAt) : null],
+                    ]
+                      .filter(([, value]) => value !== null && value !== '')
+                      .map(([label, value]) => (
+                        <div key={label}>
+                          <dt>{label}</dt>
+                          <dd>{value}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                </section>
+                <section className="detail-section">
+                  <h2>The location</h2>
+                  <p className="detail-location-line">
+                    <MapPin aria-hidden="true" />
+                    <span>
+                      {property.address}
+                      <small>{formatPropertyLocation(property)}</small>
+                    </span>
+                  </p>
+                  {property.latitude !== null && property.longitude !== null && (
+                    <PropertyMap
+                      lat={property.latitude}
+                      lng={property.longitude}
+                      address={property.address}
+                      apiKey={config.googleMapsApiKey}
+                    />
+                  )}
+                </section>
               </div>
-            </section>
-            {property.description && (
-              <section className="detail-section">
-                <h2>Description</h2>
-                <p className="detail-description">{property.description}</p>
-              </section>
-            )}
-            {property.latitude !== null && property.longitude !== null && (
-              <section className="detail-section">
-                <h2>Location</h2>
-                <PropertyMap
-                  lat={property.latitude}
-                  lng={property.longitude}
-                  address={property.address}
-                  apiKey={config.googleMapsApiKey}
-                />
-              </section>
-            )}
-          </div>
-          <aside className="property-sidebar">
-            <OpenHouses listingId={id} />
-          </aside>
+            </div>
+          </>
+        )
+      )}
+      {compact && (
+        <div className="mobile-dock detail-dock" role="region" aria-label="Property actions">
+          <button type="button" className="button button-primary" onClick={back}>
+            <ArrowLeft aria-hidden="true" />
+            Back to listings
+          </button>
+          {property && !query.isError && (
+            <button
+              type="button"
+              className="button"
+              disabled={!property.photos.length}
+              onClick={() => setPhotosOpen(true)}
+            >
+              <Images aria-hidden="true" />
+              Photos
+            </button>
+          )}
         </div>
-      </div>
+      )}
     </main>
   );
 }

@@ -55,7 +55,7 @@ describe('Pagination', () => {
     expect(screen.getByText('6')).toBeInTheDocument();
     expect(screen.getByText('24')).toBeInTheDocument();
 
-    expect(screen.getAllByText('...')).toHaveLength(2);
+    expect(screen.getAllByText('…')).toHaveLength(2);
   });
 
   test('does not duplicate the last page near the end', () => {
@@ -63,4 +63,15 @@ describe('Pagination', () => {
 
     expect(items.filter((item) => item === 24)).toHaveLength(1);
   });
+});
+
+test('compact pagination stays present for one page and disables unavailable navigation', () => {
+  const { rerender } = render(
+    <Pagination compact currentPage={1} totalPages={1} onPageChange={jest.fn()} />,
+  );
+  expect(screen.getByText('1 / 1')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+  rerender(<Pagination compact currentPage={1} totalPages={0} disabled onPageChange={jest.fn()} />);
+  expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
 });

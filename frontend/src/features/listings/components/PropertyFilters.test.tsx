@@ -1,41 +1,104 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { searchListingsSchema } from '@idx/contracts';
 import PropertyFilters from './PropertyFilters';
 
-test('submits trimmed, validated numeric filters and retains ZIP leading zero', () => {
-  const onSearch = jest.fn();
-  render(<PropertyFilters onSearch={onSearch} onClear={jest.fn()} />);
-  fireEvent.change(screen.getByLabelText('City'), { target: { value: ' Boston ' } });
-  fireEvent.change(screen.getByLabelText('ZIP Code'), { target: { value: '02108' } });
-  fireEvent.change(screen.getByLabelText('Min Price'), { target: { value: '300000' } });
-  fireEvent.change(screen.getByLabelText('Beds'), { target: { value: '3' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-  expect(onSearch).toHaveBeenCalledWith(
-    expect.objectContaining({ city: 'Boston', zipcode: '02108', minPrice: 300000, beds: 3 }),
+test('sheet applies location, fractional bathrooms and sort together with ZIP leading zero intact', () => {
+  const onApply = jest.fn();
+  render(
+    <PropertyFilters
+      variant="sheet"
+      query={searchListingsSchema.parse({ city: 'Boston', offset: 20 })}
+      onApply={onApply}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText('City or ZIP code'), { target: { value: ' 02108 ' } });
+  fireEvent.change(screen.getByLabelText('Min price'), { target: { value: '300000' } });
+  fireEvent.click(
+    within(screen.getByRole('group', { name: 'Bathrooms' })).getByRole('button', { name: '2.5+' }),
+  );
+  fireEvent.change(screen.getByLabelText('Sort'), { target: { value: 'price:ASC' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Show homes' }));
+  expect(onApply).toHaveBeenCalledWith(
+    expect.objectContaining({
+      city: undefined,
+      zipcode: '02108',
+      minPrice: 300000,
+      baths: 2.5,
+      sortBy: 'price',
+      sortOrder: 'ASC',
+      offset: 0,
+    }),
   );
 });
 
-test('rejects reversed and negative price bounds without sending a request', () => {
-  const onSearch = jest.fn();
-  render(<PropertyFilters onSearch={onSearch} onClear={jest.fn()} />);
-  fireEvent.change(screen.getByLabelText('Min Price'), { target: { value: '900000' } });
-  fireEvent.change(screen.getByLabelText('Max Price'), { target: { value: '300000' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+test('sidebar validates price bounds before applying and preserves the applied location', () => {
+  const onApply = jest.fn();
+  render(
+    <PropertyFilters
+      query={searchListingsSchema.parse({ city: 'Boston', zipcode: '02108' })}
+      onApply={onApply}
+    />,
+  );
+  expect(screen.queryByLabelText('City or ZIP code')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Min price'), { target: { value: '900000' } });
+  fireEvent.change(screen.getByLabelText('Max price'), { target: { value: '300000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
   expect(screen.getByRole('alert')).toHaveTextContent(
     'Minimum price must not exceed maximum price.',
   );
-  expect(onSearch).not.toHaveBeenCalled();
-  fireEvent.change(screen.getByLabelText('Min Price'), { target: { value: '-1' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-  expect(screen.getByRole('alert')).toBeInTheDocument();
-  expect(onSearch).not.toHaveBeenCalled();
+  expect(onApply).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Min price'), { target: { value: '-1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+  expect(onApply).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Min price'), { target: { value: '100000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+  expect(onApply).toHaveBeenCalledWith(
+    expect.objectContaining({ city: 'Boston', zipcode: '02108', minPrice: 100000 }),
+  );
 });
 
-test('clear resets the form and calls the URL reset handler', () => {
-  const onClear = jest.fn();
+test('Reset in the sheet only resets its draft; Cancel does not apply it', () => {
+  const onApply = jest.fn();
+  const onCancel = jest.fn();
   render(
-    <PropertyFilters initialValues={{ city: 'Boston' }} onSearch={jest.fn()} onClear={onClear} />,
+    <PropertyFilters
+      variant="sheet"
+      query={searchListingsSchema.parse({ city: 'Boston', beds: 4, minPrice: 100 })}
+      onApply={onApply}
+      onCancel={onCancel}
+    />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
-  expect(screen.getByLabelText('City')).toHaveValue('');
-  expect(onClear).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+  expect(screen.getByLabelText('Min price')).toHaveValue(null);
+  expect(screen.getByLabelText('City or ZIP code')).toHaveValue('Boston');
+  expect(onApply).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(onCancel).toHaveBeenCalledTimes(1);
+  expect(onApply).not.toHaveBeenCalled();
+});
+
+test('sidebar Reset immediately clears refinements while keeping location and sorting', () => {
+  const onApply = jest.fn();
+  render(
+    <PropertyFilters
+      query={searchListingsSchema.parse({
+        city: 'Boston',
+        beds: 4,
+        minPrice: 100,
+        sortBy: 'price',
+        sortOrder: 'ASC',
+      })}
+      onApply={onApply}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+  expect(onApply).toHaveBeenCalledWith(
+    expect.objectContaining({
+      city: 'Boston',
+      beds: undefined,
+      minPrice: undefined,
+      sortBy: 'price',
+      sortOrder: 'ASC',
+    }),
+  );
 });

@@ -22,10 +22,8 @@ function PropertyMap({
   if (!apiKey) {
     return (
       <div className="map-unavailable">
-        <p>Map is not configured.</p>
-
         <a href={directionsUrl} target="_blank" rel="noopener noreferrer">
-          Get Directions
+          Get directions
         </a>
       </div>
     );
@@ -49,7 +47,7 @@ function PropertyMap({
       />
 
       <a className="directions-link" href={directionsUrl} target="_blank" rel="noopener noreferrer">
-        Get Directions
+        Get directions
       </a>
     </div>
   );

@@ -35,9 +35,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run check:boundaries
-      - run: npm run verify
+      - run: npm run verify:ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npx playwright test
         env:
           E2E_DATABASE_URL: postgresql://idx_test:idx_test@localhost:5432/idx_test

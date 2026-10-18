@@ -1,16 +1,10 @@
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import './Pagination.css';
 
 export function getPageItems(currentPage: number, totalPages: number): (number | string)[] {
-  // Limit long page ranges while keeping the first, nearby, and last pages accessible.
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, 'right-ellipsis', totalPages];
-  }
-
-  if (currentPage >= totalPages - 3) {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+  if (currentPage <= 4) return [1, 2, 3, 4, 5, 'right-ellipsis', totalPages];
+  if (currentPage >= totalPages - 3)
     return [
       1,
       'left-ellipsis',
@@ -20,8 +14,6 @@ export function getPageItems(currentPage: number, totalPages: number): (number |
       totalPages - 1,
       totalPages,
     ];
-  }
-
   return [
     1,
     'left-ellipsis',
@@ -33,58 +25,84 @@ export function getPageItems(currentPage: number, totalPages: number): (number |
   ];
 }
 
-function Pagination({
+export default function Pagination({
   currentPage,
   totalPages,
   onPageChange,
+  compact = false,
+  disabled = false,
 }: {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  compact?: boolean;
+  disabled?: boolean;
 }) {
-  if (totalPages <= 1) {
-    return null;
-  }
-
-  const items = getPageItems(currentPage, totalPages);
-
+  if (totalPages <= 1 && !compact) return null;
+  const validPage = currentPage >= 1 && currentPage <= totalPages;
   return (
-    <nav className="pagination" aria-label="Property pagination">
+    <nav
+      className={`pagination ${compact ? 'pagination-compact' : ''}`}
+      aria-label="Property pagination"
+    >
       <button
+        className="button"
         type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
+        aria-label={compact ? 'Previous page' : 'Previous'}
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={disabled || currentPage <= 1 || totalPages === 0}
       >
-        Previous
-      </button>
-
-      {items.map((item) =>
-        typeof item === 'string' ? (
-          <span key={item} className="pagination-ellipsis">
-            ...
-          </span>
+        {compact ? (
+          <ChevronLeft aria-hidden="true" />
         ) : (
-          <button
-            type="button"
-            key={item}
-            className={item === currentPage ? 'active' : ''}
-            aria-current={item === currentPage ? 'page' : undefined}
-            onClick={() => onPageChange(item)}
-          >
-            {item}
-          </button>
-        ),
+          <>
+            <ArrowLeft aria-hidden="true" />
+            Previous
+          </>
+        )}
+      </button>
+      {compact ? (
+        <span className="page-counter" aria-live="polite">
+          {disabled || (!validPage && totalPages > 0)
+            ? '—'
+            : `${totalPages ? currentPage : 0} / ${totalPages}`}
+        </span>
+      ) : (
+        getPageItems(currentPage, totalPages).map((item) =>
+          typeof item === 'string' ? (
+            <span key={item} className="pagination-ellipsis">
+              …
+            </span>
+          ) : (
+            <button
+              className={`button ${item === currentPage ? 'active' : ''}`}
+              type="button"
+              key={item}
+              aria-current={item === currentPage ? 'page' : undefined}
+              onClick={() => onPageChange(item)}
+              disabled={disabled}
+            >
+              {item}
+            </button>
+          ),
+        )
       )}
-
       <button
+        className="button"
         type="button"
+        aria-label={compact ? 'Next page' : 'Next'}
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={disabled || currentPage >= totalPages}
       >
-        Next
+        {compact ? (
+          <ChevronRight aria-hidden="true" />
+        ) : (
+          <>
+            Next
+            <ArrowRight aria-hidden="true" />
+          </>
+        )}
       </button>
     </nav>
   );
 }
-
-export default Pagination;

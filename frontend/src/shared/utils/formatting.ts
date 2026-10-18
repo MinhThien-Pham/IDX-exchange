@@ -7,6 +7,29 @@ export function formatPrice(price: number | null): string {
   }).format(price);
 }
 
+export function formatPricePerSquareFoot(price: number | null, area: number | null) {
+  return price !== null &&
+    area !== null &&
+    Number.isFinite(price) &&
+    Number.isFinite(area) &&
+    price > 0 &&
+    area > 0
+    ? `${formatPrice(price / area)}/sqft`
+    : null;
+}
+
+export function formatListingDate(value: string) {
+  const parsed = new Date(`${value.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(parsed.getTime())
+    ? 'Date unavailable'
+    : parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+export function formatPropertyLocation(property: { city: string; state: string; zipcode: string }) {
+  const cityState = [property.city, property.state].filter(Boolean).join(', ');
+  return [cityState, property.zipcode].filter(Boolean).join(' ') || 'Location unavailable';
+}
+
 export function formatOpenHouseDate(value: string): string {
   const date = new Date(`${value.slice(0, 10)}T00:00:00`);
   return Number.isNaN(date.getTime())

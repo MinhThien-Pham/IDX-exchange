@@ -6,24 +6,7 @@ import {
 import { useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { buildQueryString } from '../../../shared/api/client';
-
-export const validSearchSchema = searchListingsSchema.refine(
-  (value) =>
-    value.minPrice === undefined ||
-    value.maxPrice === undefined ||
-    value.minPrice <= value.maxPrice,
-  { message: 'Minimum price must not exceed maximum price.', path: ['maxPrice'] },
-);
-
-export function parseListingSearch(params: URLSearchParams) {
-  // Ignore unrelated URL parameters while rejecting duplicate known parameters.
-  const query: Record<string, unknown> = {};
-  for (const key of Object.keys(searchListingsSchema.shape)) {
-    const values = params.getAll(key);
-    if (values.length > 0) query[key] = values.length === 1 ? values[0] : values;
-  }
-  return validSearchSchema.safeParse(query);
-}
+import { parseListingSearch } from '../model/search-query';
 
 export function useListingSearch() {
   const [params, setParams] = useSearchParams();
@@ -54,30 +37,43 @@ export function useListingSearch() {
     }
   }, [location.key, location.search, navigationType, query]);
 
-  function commit(nextQuery: SearchListingsQuery, serialized = buildQueryString(nextQuery)) {
+  function commit(
+    nextQuery: SearchListingsQuery,
+    serialized = buildQueryString(nextQuery),
+    scrollY = 0,
+  ) {
     // Compose rapid commands synchronously, before React commits the next URL.
     draft.current.query = nextQuery;
     draft.current.latestSearch = serialized ? `?${serialized}` : '';
     draft.current.pendingSearches.add(draft.current.latestSearch);
-    setParams(serialized);
+    setParams(serialized, { state: { scrollY } });
   }
 
   const { city, zipcode, minPrice, maxPrice, beds, baths } = query;
   const filters: ListingFilters = { city, zipcode, minPrice, maxPrice, beds, baths };
 
-  function update(changes: Partial<SearchListingsQuery>) {
-    commit({ ...draft.current.query, ...changes });
+  function update(changes: Partial<SearchListingsQuery>, scrollY = window.scrollY) {
+    commit({ ...draft.current.query, ...changes }, undefined, scrollY);
   }
 
-  function search(nextFilters: ListingFilters) {
+  function search(
+    nextFilters: ListingFilters,
+    sorting?: Pick<SearchListingsQuery, 'sortBy' | 'sortOrder'>,
+  ) {
     // Replace all filter fields, including those cleared by the user.
     const current = draft.current.query;
     commit({
-      ...nextFilters,
+      ...Object.fromEntries(
+        ['city', 'zipcode', 'minPrice', 'maxPrice', 'beds', 'baths'].map((key) => [
+          key,
+          nextFilters[key as keyof ListingFilters],
+        ]),
+      ),
       limit: current.limit,
       offset: 0,
       sortBy: current.sortBy,
       sortOrder: current.sortOrder,
+      ...sorting,
     });
   }
 

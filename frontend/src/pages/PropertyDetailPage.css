@@ -1,199 +1,251 @@
 .property-detail-page {
-  min-height: 100vh;
-  padding: 32px;
-  background: #f9fafb;
-  color: #111827;
+  padding-top: 25px;
+  padding-bottom: 50px;
+  max-width: 1320px;
 }
-
-.property-detail-shell {
-  max-width: 1200px;
-  margin: 0 auto;
+.property-detail-page.page-container {
+  max-width: 1320px;
 }
-
 .back-button {
   margin-bottom: 20px;
-  padding: 8px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: white;
-  color: #374151;
-  cursor: pointer;
+  padding-left: 0;
+  color: var(--muted);
 }
-
-.back-button:hover {
-  background: #f3f4f6;
-}
-
 .detail-header {
-  margin-bottom: 20px;
-}
-
-.detail-header h1 {
-  margin: 0 0 8px;
-  font-size: 2rem;
-}
-
-.detail-address {
-  margin: 0 0 4px;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.detail-location {
-  margin: 0;
-  color: #6b7280;
-}
-
-.property-image-main {
   margin-bottom: 24px;
 }
-
+.detail-pricing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  margin-bottom: 9px;
+}
+.detail-price {
+  font-size: 38px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+.detail-header h1 {
+  font-size: 25px;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+  font-weight: 650;
+}
+.detail-header > p {
+  margin-top: 5px;
+  color: var(--muted);
+}
+.property-image-main {
+  margin-bottom: 28px;
+}
 .property-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  grid-template-areas: 'facts events' 'body events';
+  gap: 0 30px;
 }
-
 .detail-stats {
+  grid-area: facts;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.detail-stats div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-}
-
-.detail-stats strong {
-  font-size: 1.2rem;
-}
-
-.detail-stats span {
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-
-.detail-section,
-.sidebar-box {
-  margin-bottom: 24px;
-  padding: 20px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: white;
-}
-
-.detail-section h2,
-.sidebar-box h2 {
-  margin: 0 0 16px;
-  font-size: 1.25rem;
-}
-
-.detail-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.detail-item:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.detail-item span {
-  color: #6b7280;
-}
-
-.detail-description {
-  margin: 0;
-  line-height: 1.6;
-  color: #374151;
-}
-
-.property-sidebar {
-  position: sticky;
-  top: 20px;
-}
-
-.open-house-list {
-  display: grid;
-  gap: 12px;
-}
-
-.open-house-item {
-  padding: 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-
-.open-house-item p {
-  margin: 6px 0 0;
-}
-
-.open-house-time {
-  color: #2563eb;
-}
-
-.open-house-remarks {
-  color: #6b7280;
-  line-height: 1.4;
-}
-
-.no-open-houses {
-  margin: 0;
-  color: #6b7280;
-  font-style: italic;
-}
-
-.detail-loading {
-  padding: 80px 20px;
-  text-align: center;
-}
-
-.detail-error {
-  max-width: 600px;
-  margin: 80px auto;
-  padding: 24px;
-  border: 1px solid #fecaca;
+  background: var(--sand);
+  padding: 22px;
   border-radius: 12px;
-  background: white;
-  text-align: center;
+  margin-bottom: 28px;
 }
-
-.detail-error button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
+.detail-stats strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
 }
-
-@media (max-width: 768px) {
+.detail-stats span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+.detail-stats svg {
+  width: 16px;
+  height: 16px;
+  color: var(--teal);
+}
+.property-main {
+  grid-area: body;
+  min-width: 0;
+}
+.property-sidebar {
+  grid-area: events;
+  align-self: start;
+  min-width: 0;
+}
+.detail-section {
+  margin-bottom: 30px;
+}
+.detail-section h2 {
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 650;
+  margin-bottom: 16px;
+}
+.detail-description {
+  white-space: pre-line;
+  line-height: 1.85;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.detail-definition {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+  margin: 0;
+}
+.detail-definition > div {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.detail-definition dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.detail-definition dd {
+  margin: 5px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.detail-location-line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 10px;
+  background: var(--soft);
+}
+.detail-location-line svg {
+  color: var(--teal);
+}
+.detail-location-line small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.open-houses {
+  background: var(--soft);
+  border-radius: 12px;
+  padding: 23px;
+}
+.open-houses h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  line-height: 1.3;
+  margin-bottom: 19px;
+}
+.open-houses h2 svg {
+  color: var(--teal);
+}
+.open-house-item + .open-house-item {
+  margin-top: 23px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.open-house-item time {
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+.open-house-time {
+  font-weight: 600;
+  margin-top: 7px;
+}
+.open-house-zone {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.open-house-status {
+  display: inline-block;
+  background: var(--sand);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 11px;
+  margin-top: 13px;
+}
+.open-house-status[data-past='true'] {
+  background: var(--surface);
+  color: var(--muted);
+}
+.open-house-remarks {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+}
+.no-open-houses,
+.missing-details-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+.missing-details-note {
+  margin-bottom: 20px;
+}
+.detail-loading-skeleton {
+  min-height: 400px;
+  background: var(--soft);
+  border-radius: 14px;
+  margin-top: 20px;
+}
+.detail-dock > .button:first-child {
+  flex: 1;
+}
+@media (max-width: 899px), (max-height: 500px) and (pointer: coarse) {
   .property-detail-page {
-    padding: 20px;
+    padding-top: 26px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
   }
-
   .property-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'facts' 'events' 'body';
   }
-
   .property-sidebar {
-    position: static;
+    margin-bottom: 28px;
+  }
+  .detail-price {
+    font-size: 33px;
+  }
+  .detail-header h1 {
+    font-size: 23px;
+  }
+}
+@media (max-width: 560px) {
+  .detail-price {
+    font-size: 31px;
+  }
+  .detail-header h1 {
+    font-size: 22px;
+  }
+  .detail-header {
+    margin-bottom: 22px;
+  }
+  .detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 18px;
+    gap: 18px;
+  }
+  .detail-definition {
+    gap: 0 18px;
+  }
+  .detail-section h2 {
+    font-size: 21px;
+  }
+  .property-image-main {
+    margin-inline: -18px;
   }
 }

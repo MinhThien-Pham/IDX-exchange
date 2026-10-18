@@ -1,183 +1,236 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
+import Modal from '../../../shared/ui/Modal';
+import PropertyImage from '../../../shared/ui/PropertyImage';
 import './PropertyImageGallery.css';
 
-function PropertyImageGallery({ photos, address }: { photos: string[]; address: string }) {
-  const photoList = photos;
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!lightboxOpen) {
-      return undefined;
-    }
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const dialog = dialogRef.current;
-    dialog?.querySelector<HTMLButtonElement>('button')?.focus();
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Tab' && dialog) {
-        const buttons = dialog.querySelectorAll<HTMLButtonElement>('button');
-        const first = buttons[0];
-        const last = buttons[buttons.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }
-      if (event.key === 'Escape') {
-        setLightboxOpen(false);
-      }
-
-      if (event.key === 'ArrowLeft') {
-        setLightboxIndex((index) => (index === 0 ? photoList.length - 1 : index - 1));
-      }
-
-      if (event.key === 'ArrowRight') {
-        setLightboxIndex((index) => (index === photoList.length - 1 ? 0 : index + 1));
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
-    };
-  }, [lightboxOpen, photoList.length]);
-
-  if (photoList.length === 0) {
-    return <div className="gallery-placeholder">No Photos Available</div>;
-  }
-
-  function openLightbox(index: number) {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  }
-
-  function showPrevious(event: MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-
-    setLightboxIndex((index) => (index === 0 ? photoList.length - 1 : index - 1));
-  }
-
-  function showNext(event: MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-
-    setLightboxIndex((index) => (index === photoList.length - 1 ? 0 : index + 1));
-  }
-
+function PhotoRail({
+  photos,
+  address,
+  index,
+  onIndexChange,
+  onOpen,
+  fullscreen,
+  showArrows,
+}: {
+  photos: string[];
+  address: string;
+  index: number;
+  onIndexChange: (index: number) => void;
+  onOpen?: () => void;
+  fullscreen?: boolean;
+  showArrows: boolean;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const node = track.current;
+    if (node?.clientWidth && Math.round(node.scrollLeft / node.clientWidth) !== index)
+      node.scrollTo({ left: index * node.clientWidth, behavior: 'instant' });
+  }, [index]);
   return (
-    <>
+    <section
+      className={`photo-rail ${fullscreen ? 'photo-rail-fullscreen' : ''}`}
+      aria-label={fullscreen ? 'Full screen photos' : 'Property photos'}
+    >
       <div
-        className="gallery-main"
-        onClick={() => openLightbox(activeIndex)}
-        role="button"
-        tabIndex={0}
-        aria-label="Open property photo viewer"
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openLightbox(activeIndex);
-          }
+        className="photo-track"
+        tabIndex={fullscreen ? 0 : undefined}
+        role={fullscreen ? 'group' : undefined}
+        aria-label={
+          fullscreen ? 'Photos. Use the left and right arrow keys to change photo.' : undefined
+        }
+        ref={track}
+        onScroll={(event) => {
+          const node = event.currentTarget;
+          if (node.clientWidth)
+            onIndexChange(
+              Math.max(
+                0,
+                Math.min(photos.length - 1, Math.round(node.scrollLeft / node.clientWidth)),
+              ),
+            );
         }}
       >
-        <img
-          src={photoList[activeIndex]}
-          alt={`${address || 'Property'} main`}
-          className="gallery-main-image"
-        />
-
-        <span className="gallery-count">
-          {activeIndex + 1} / {photoList.length}
-        </span>
-      </div>
-
-      {photoList.length > 1 && (
-        <div className="gallery-thumbnails">
-          {photoList.map((photo, index) => (
+        {photos.map((src, position) =>
+          fullscreen ? (
+            <div className="photo-slide" key={`${src}-${position}`}>
+              <PropertyImage
+                src={src}
+                alt={`${address || 'Property'}, photo ${position + 1}`}
+                eager={position === index}
+              />
+            </div>
+          ) : (
             <button
+              className="photo-slide"
               type="button"
-              className={`gallery-thumbnail-button ${index === activeIndex ? 'active' : ''}`}
-              key={`${photo}-${index}`}
-              onClick={() => setActiveIndex(index)}
+              key={`${src}-${position}`}
+              aria-label={`Enlarge property photo ${position + 1}`}
+              onClick={() => {
+                onIndexChange(position);
+                onOpen?.();
+              }}
             >
-              <img
-                src={photo}
-                alt={`${address || 'Property'} thumbnail ${index + 1}`}
-                className="gallery-thumbnail"
+              <PropertyImage
+                src={src}
+                alt={`${address || 'Property'}, photo ${position + 1}`}
+                eager={position === 0}
               />
             </button>
-          ))}
-        </div>
-      )}
-
-      {lightboxOpen && (
-        <div
-          ref={dialogRef}
-          className="lightbox-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Property photo viewer"
-          onClick={() => setLightboxOpen(false)}
-        >
+          ),
+        )}
+      </div>
+      {showArrows && photos.length > 1 && (
+        <>
           <button
+            className="photo-arrow photo-previous"
             type="button"
-            className="lightbox-close"
-            onClick={(event) => {
-              event.stopPropagation();
-              setLightboxOpen(false);
-            }}
-            aria-label="Close photo viewer"
+            aria-label="Previous photo"
+            onClick={() => onIndexChange(Math.max(0, index - 1))}
+            disabled={index === 0}
           >
-            ×
+            <ChevronLeft aria-hidden="true" />
           </button>
-
-          {photoList.length > 1 && (
-            <button
-              type="button"
-              className="lightbox-button lightbox-previous"
-              onClick={showPrevious}
-              aria-label="Previous photo"
-            >
-              ‹
-            </button>
-          )}
-
-          <img
-            src={photoList[lightboxIndex]}
-            alt={`${address || 'Property'} ${lightboxIndex + 1}`}
-            className="lightbox-image"
-            onClick={(event) => event.stopPropagation()}
-          />
-
-          {photoList.length > 1 && (
-            <button
-              type="button"
-              className="lightbox-button lightbox-next"
-              onClick={showNext}
-              aria-label="Next photo"
-            >
-              ›
-            </button>
-          )}
-
-          <span className="lightbox-counter">
-            {lightboxIndex + 1} / {photoList.length}
-          </span>
-        </div>
+          <button
+            className="photo-arrow photo-next"
+            type="button"
+            aria-label="Next photo"
+            onClick={() => onIndexChange(Math.min(photos.length - 1, index + 1))}
+            disabled={index === photos.length - 1}
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
+        </>
       )}
-    </>
+      {!fullscreen && (
+        <span className="photo-counter" aria-live="polite">
+          {index + 1} / {photos.length}
+        </span>
+      )}
+    </section>
   );
 }
 
-export default PropertyImageGallery;
+export default function PropertyImageGallery({
+  photos,
+  address,
+  open,
+  onOpen,
+  onClose,
+}: {
+  photos: string[];
+  address: string;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  const compact = useMediaQuery(compactLayoutQuery);
+  const [index, setIndex] = useState(0);
+  function navigate(event: KeyboardEvent) {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      event.stopPropagation();
+      setIndex((current) =>
+        Math.max(0, Math.min(photos.length - 1, current + (event.key === 'ArrowRight' ? 1 : -1))),
+      );
+    }
+  }
+  if (!photos.length)
+    return (
+      <div className="gallery-placeholder">
+        <ImageOff aria-hidden="true" />
+        <strong>Photos unavailable</strong>
+        <p>No images were included for this listing.</p>
+      </div>
+    );
+  return (
+    <div onKeyDown={navigate}>
+      <PhotoRail
+        photos={photos}
+        address={address}
+        index={index}
+        onIndexChange={setIndex}
+        onOpen={onOpen}
+        showArrows
+      />
+      {open && (
+        <Modal
+          className="photo-dialog"
+          labelledBy="photos-title"
+          onClose={onClose}
+          initialFocus={compact ? '.photo-close-mobile' : '.photo-close-desktop'}
+        >
+          <div className="photo-dialog-layout" onKeyDown={navigate}>
+            <header className="photo-dialog-header">
+              <div>
+                <h2 id="photos-title">Property photos</h2>
+                <p>{address || 'Property'}</p>
+              </div>
+              {!compact && (
+                <div className="photo-desktop-actions">
+                  <span aria-live="polite">
+                    {index + 1} / {photos.length}
+                  </span>
+                  <button
+                    className="button photo-close-desktop"
+                    type="button"
+                    aria-label="Close photos"
+                    onClick={onClose}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </header>
+            <div className="photo-dialog-body">
+              <PhotoRail
+                photos={photos}
+                address={address}
+                index={index}
+                onIndexChange={setIndex}
+                fullscreen
+                showArrows={!compact}
+              />
+            </div>
+            {compact && (
+              <footer className="photo-dialog-footer">
+                <button
+                  className="button button-primary photo-close-mobile"
+                  type="button"
+                  onClick={onClose}
+                >
+                  <X aria-hidden="true" />
+                  Close photos
+                </button>
+                <nav className="photo-navigation" aria-label="Photo navigation">
+                  <button
+                    className="button"
+                    type="button"
+                    aria-label="Previous photo"
+                    onClick={() => setIndex((current) => Math.max(0, current - 1))}
+                    disabled={index === 0}
+                  >
+                    <ChevronLeft aria-hidden="true" />
+                  </button>
+                  <span aria-live="polite">
+                    {index + 1} / {photos.length}
+                  </span>
+                  <button
+                    className="button"
+                    type="button"
+                    aria-label="Next photo"
+                    onClick={() => setIndex((current) => Math.min(photos.length - 1, current + 1))}
+                    disabled={index === photos.length - 1}
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                </nav>
+              </footer>
+            )}
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}

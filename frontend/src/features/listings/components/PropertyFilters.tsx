@@ -1,126 +1,180 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react';
-import { type ListingFilters } from '@idx/contracts';
-import { validSearchSchema } from '../hooks/useListingSearch';
+import { Bath, BedDouble, SlidersHorizontal, Search, ArrowLeft } from 'lucide-react';
+import { useId, useState, type FormEvent } from 'react';
+import { type SearchListingsQuery } from '@idx/contracts';
+import { formValues, parseSearchForm, sortOptions, type SearchForm } from '../model/search-form';
 import './PropertyFilters.css';
 
-const emptyFilters = { city: '', zipcode: '', minPrice: '', maxPrice: '', beds: '', baths: '' };
-type FilterInput = typeof emptyFilters;
+type Props = {
+  query: SearchListingsQuery;
+  variant?: 'sidebar' | 'sheet';
+  onApply: (query: SearchListingsQuery) => void;
+  onCancel?: () => void;
+};
 
-function toFormValues(values: ListingFilters): FilterInput {
-  return Object.fromEntries(
-    Object.keys(emptyFilters).map((key) => [
-      key,
-      String(values[key as keyof ListingFilters] ?? ''),
-    ]),
-  ) as FilterInput;
-}
-
-export default function PropertyFilters({
-  initialValues = {},
-  onSearch,
-  onClear,
-}: {
-  initialValues?: ListingFilters;
-  onSearch: (filters: ListingFilters) => void;
-  onClear: () => void;
-}) {
-  const [filters, setFilters] = useState(() => toFormValues(initialValues));
+export default function PropertyFilters({ query, variant = 'sidebar', onApply, onCancel }: Props) {
+  const [draft, setDraft] = useState(() => formValues(query));
   const [error, setError] = useState('');
-  function change(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setFilters((current) => ({ ...current, [event.target.name]: event.target.value }));
+  const errorId = useId();
+  const sheet = variant === 'sheet';
+  function change(name: keyof SearchForm, value: string) {
+    setDraft((current) => ({ ...current, [name]: value }));
+    setError('');
   }
   function submit(event: FormEvent) {
     event.preventDefault();
-    const input = Object.fromEntries(
-      Object.entries(filters).filter(([, value]) => value.trim() !== ''),
-    );
-    const parsed = validSearchSchema.safeParse(input);
+    const parsed = parseSearchForm(draft, query, sheet);
     if (!parsed.success) {
       setError(parsed.error.issues.map((issue) => issue.message).join(' '));
       return;
     }
-    setError('');
-    const { city, zipcode, minPrice, maxPrice, beds, baths } = parsed.data;
-    onSearch({ city, zipcode, minPrice, maxPrice, beds, baths });
+    onApply(parsed.data);
   }
+  const numberChoices = (name: 'beds' | 'baths') => {
+    const base = name === 'beds' ? ['1', '2', '3', '4', '5'] : ['1', '1.5', '2', '2.5', '3'];
+    return ['', ...new Set([...base, ...(draft[name] ? [draft[name]] : [])])];
+  };
   return (
-    <form className="property-filters" onSubmit={submit} noValidate>
-      <div className="filter-grid">
-        <label>
-          City
-          <input
-            name="city"
-            value={filters.city}
-            onChange={change}
-            placeholder="e.g. Beverly Hills"
-            maxLength={100}
-          />
-        </label>
-        <label>
-          ZIP Code
-          <input
-            name="zipcode"
-            value={filters.zipcode}
-            onChange={change}
-            placeholder="e.g. 90210"
-            maxLength={20}
-          />
-        </label>
-        <label>
-          Min Price
-          <input
-            name="minPrice"
-            type="number"
-            min="0"
-            value={filters.minPrice}
-            onChange={change}
-            placeholder="e.g. 300000"
-          />
-        </label>
-        <label>
-          Max Price
-          <input
-            name="maxPrice"
-            type="number"
-            min="0"
-            value={filters.maxPrice}
-            onChange={change}
-            placeholder="e.g. 1000000"
-          />
-        </label>
-        {(['beds', 'baths'] as const).map((name) => (
-          <label key={name}>
-            {name === 'beds' ? 'Beds' : 'Baths'}
-            <select name={name} value={filters[name]} onChange={change}>
-              <option value="">Any</option>
-              {[1, 2, 3, 4, 5].map((count) => (
-                <option key={count} value={count}>
-                  {count}+
+    <form
+      className={`property-filters ${sheet ? 'filter-sheet-form' : 'filter-sidebar'}`}
+      onSubmit={submit}
+      noValidate
+      aria-label={sheet ? 'Search and filters' : 'Property filters'}
+      aria-describedby={error ? errorId : undefined}
+    >
+      {!sheet && (
+        <h2 className="filter-title">
+          <SlidersHorizontal aria-hidden="true" />
+          Filters
+        </h2>
+      )}
+      <div className="filter-fields">
+        {sheet && (
+          <label className="field">
+            City or ZIP code
+            <input
+              name="location"
+              value={draft.location}
+              onChange={(event) => change('location', event.target.value)}
+              placeholder="e.g. San Diego or 92101"
+              maxLength={100}
+              autoComplete="off"
+            />
+          </label>
+        )}
+        <div className="price-fields">
+          {(['minPrice', 'maxPrice'] as const).map((name) => (
+            <label className="field" key={name}>
+              {name === 'minPrice' ? 'Min price' : 'Max price'}
+              <input
+                name={name}
+                type="number"
+                min="0"
+                inputMode="decimal"
+                value={draft[name]}
+                onChange={(event) => change(name, event.target.value)}
+                placeholder={name === 'minPrice' ? 'No min' : 'No max'}
+              />
+            </label>
+          ))}
+        </div>
+        {(['beds', 'baths'] as const).map((name) =>
+          sheet ? (
+            <fieldset className="room-choices" key={name}>
+              <legend>
+                {name === 'beds' ? <BedDouble aria-hidden="true" /> : <Bath aria-hidden="true" />}
+                {name === 'beds' ? 'Bedrooms' : 'Bathrooms'}
+              </legend>
+              <div>
+                {numberChoices(name).map((value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    aria-pressed={draft[name] === value}
+                    onClick={() => change(name, value)}
+                  >
+                    {value ? `${value}+` : 'Any'}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : (
+            <label className="field" key={name}>
+              {name === 'beds' ? 'Bedrooms' : 'Bathrooms'}
+              <select
+                aria-label={name === 'beds' ? 'Bedrooms' : 'Bathrooms'}
+                name={name}
+                value={draft[name]}
+                onChange={(event) => change(name, event.target.value)}
+              >
+                {numberChoices(name).map((value) => (
+                  <option key={value} value={value}>
+                    {value ? `${value}+` : 'Any'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ),
+        )}
+        {sheet && (
+          <label className="field">
+            Sort
+            <select
+              aria-label="Sort"
+              name="sort"
+              value={draft.sort}
+              onChange={(event) => change('sort', event.target.value)}
+            >
+              {sortOptions.map(([value, label]) => (
+                <option value={value} key={value}>
+                  {label}
                 </option>
               ))}
             </select>
           </label>
-        ))}
-      </div>
-      {error && (
-        <p role="alert" className="filter-error">
-          {error}
-        </p>
-      )}
-      <div className="filter-actions">
-        <button type="submit">Search</button>
+        )}
+        {error && (
+          <p role="alert" className="field-error" id={errorId}>
+            {error}
+          </p>
+        )}
         <button
           type="button"
-          className="clear-button"
+          className="button button-quiet reset-filters"
           onClick={() => {
-            setFilters(emptyFilters);
+            setDraft((current) => ({
+              ...current,
+              minPrice: '',
+              maxPrice: '',
+              beds: '',
+              baths: '',
+            }));
             setError('');
-            onClear();
+            if (!sheet)
+              onApply({
+                ...query,
+                minPrice: undefined,
+                maxPrice: undefined,
+                beds: undefined,
+                baths: undefined,
+                offset: 0,
+              });
           }}
         >
-          Clear Filters
+          Reset filters
         </button>
       </div>
+      <footer className="filter-actions">
+        {sheet && (
+          <button type="button" className="button" onClick={onCancel}>
+            <ArrowLeft aria-hidden="true" />
+            Cancel
+          </button>
+        )}
+        <button type="submit" className="button button-primary">
+          {sheet && <Search aria-hidden="true" />}
+          {sheet ? 'Show homes' : 'Apply filters'}
+        </button>
+      </footer>
     </form>
   );
 }

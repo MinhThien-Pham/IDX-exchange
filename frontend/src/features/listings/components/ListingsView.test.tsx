@@ -1,12 +1,14 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ListingsPage from '../../../pages/ListingsPage';
 import PropertyDetailPage from '../../../pages/PropertyDetailPage';
 import { listing, mockJsonResponse } from '../../../test/fixtures';
+import { compactLayoutQuery } from '../../../shared/hooks/useMediaQuery';
 
 const fetchMock = jest.fn<Promise<Response>, Parameters<typeof fetch>>();
 beforeEach(() => {
+  fetchMock.mockReset();
   global.fetch = fetchMock;
 });
 
@@ -53,83 +55,95 @@ function respondToRoutes() {
     });
   });
 }
+function useCompactViewport() {
+  const original = window.matchMedia;
+  window.matchMedia = jest.fn((query) => ({
+    ...original(query),
+    matches: query === compactLayoutQuery,
+  }));
+}
 
-test('loads a shared URL, changes filters and restores them with browser back', async () => {
+test('initial heading uses the API total and All locations, never the page length or California', async () => {
   respondToRoutes();
-  renderListings('/?city=Boston&offset=20&sortBy=price&sortOrder=ASC');
+  renderListings();
+  expect(screen.getByRole('heading', { name: 'Finding homes…' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: '0 homes' })).not.toBeInTheDocument();
+  await screen.findByRole('heading', { name: '60 homes' });
+  expect(screen.getByText('All locations')).toBeInTheDocument();
+  expect(screen.getByText('Showing 1–1 of 60')).toBeInTheDocument();
+  expect(screen.queryByText('in California')).not.toBeInTheDocument();
+});
+
+test('typing stays a draft, sorting preserves it, and explicit search updates the shareable URL', async () => {
+  respondToRoutes();
+  renderListings('/?city=Boston&offset=20');
   await screen.findByText('123 Canon Drive');
-  expect(screen.getByLabelText('City')).toHaveValue('Boston');
-  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('offset=20'), expect.any(Object));
-  fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Miami' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+  fireEvent.change(screen.getByLabelText('City or ZIP code'), { target: { value: 'Miami' } });
+  expect(screen.getByTestId('location')).toHaveTextContent('city=Boston');
+  fireEvent.change(screen.getByLabelText('Sort listings'), { target: { value: 'price:ASC' } });
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('sortBy=price'));
+  expect(screen.getByLabelText('City or ZIP code')).toHaveValue('Miami');
+  expect(screen.getByTestId('location')).toHaveTextContent('city=Boston');
+  fireEvent.click(screen.getByRole('button', { name: 'Search listings' }));
   await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('city=Miami'));
   expect(screen.getByTestId('location')).toHaveTextContent('offset=0');
   fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
-  await waitFor(() => expect(screen.getByLabelText('City')).toHaveValue('Boston'));
-  expect(screen.getByTestId('location')).toHaveTextContent('offset=20');
+  await waitFor(() => expect(screen.getByLabelText('City or ZIP code')).toHaveValue('Boston'));
 });
 
-test('server pagination and sorting are reflected in the shareable URL', async () => {
-  respondToRoutes();
-  renderListings();
-  await screen.findByText('123 Canon Drive');
-  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('offset=20'));
-  fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'price' } });
-  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('sortBy=price'));
-  expect(screen.getByTestId('location')).toHaveTextContent('offset=0');
-});
-
-test('rapid search and sort commands compose before the router commits a render', async () => {
+test('rapid search and sort compose before the router commits and POP replaces the command draft', async () => {
   respondToRoutes();
   renderListings('/?limit=2');
   await screen.findByText('123 Canon Drive');
-  fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Pasadena' } });
+  fireEvent.change(screen.getByLabelText('City or ZIP code'), { target: { value: 'Pasadena' } });
   act(() => {
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'price' } });
-    fireEvent.change(screen.getByLabelText('Order'), { target: { value: 'ASC' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search listings' }));
+    fireEvent.change(screen.getByLabelText('Sort listings'), { target: { value: 'price:ASC' } });
   });
   await waitFor(() => {
     const url = screen.getByTestId('location');
     expect(url).toHaveTextContent('city=Pasadena');
     expect(url).toHaveTextContent('limit=2');
-    expect(url).toHaveTextContent('sortBy=price');
     expect(url).toHaveTextContent('sortOrder=ASC');
   });
-  expect(screen.getByLabelText('City')).toHaveValue('Pasadena');
-  expect(fetchMock).toHaveBeenLastCalledWith(
-    expect.stringMatching(/city=Pasadena.*sortBy=price&sortOrder=ASC/),
-    expect.any(Object),
-  );
-
-  // A POP must replace the draft before another burst of UI commands.
   fireEvent.click(screen.getByRole('button', { name: 'Browser back' }));
-  await waitFor(() => expect(screen.getByLabelText('Order')).toHaveValue('DESC'));
-  act(() => {
-    fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'squareFeet' } });
-    fireEvent.change(screen.getByLabelText('Order'), { target: { value: 'ASC' } });
-  });
-  await waitFor(() => {
-    const url = screen.getByTestId('location');
-    expect(url).toHaveTextContent('city=Pasadena');
-    expect(url).toHaveTextContent('sortBy=squareFeet');
-    expect(url).toHaveTextContent('sortOrder=ASC');
-  });
+  await waitFor(() => expect(screen.getByLabelText('Sort listings')).toHaveValue('listedAt:DESC'));
+  fireEvent.change(screen.getByLabelText('Sort listings'), { target: { value: 'squareFeet:ASC' } });
+  await waitFor(() =>
+    expect(screen.getByTestId('location')).toHaveTextContent('sortBy=squareFeet'),
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent('city=Pasadena');
 });
 
-test('listing detail and Back to Listings retain active filters', async () => {
+test('pagination and detail return retain filters, sort and current page', async () => {
   respondToRoutes();
-  renderListings('/?city=Boston&offset=20');
-  fireEvent.click(await screen.findByRole('link', { name: /view 123 canon drive/i }));
-  await screen.findByText('Property Details');
-  fireEvent.click(screen.getByRole('button', { name: /Back to Listings/ }));
-  await screen.findByRole('heading', { name: 'Property Listings' });
-  expect(screen.getByLabelText('City')).toHaveValue('Boston');
+  renderListings('/?city=Boston&sortBy=price&sortOrder=ASC');
+  await screen.findByText('123 Canon Drive');
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('offset=20'));
+  fireEvent.click(screen.getByRole('link', { name: /view 123 canon drive/i }));
+  await screen.findByRole('heading', { name: 'Property details' });
+  fireEvent.click(screen.getByRole('button', { name: 'Back to listings' }));
+  await screen.findByRole('heading', { name: '60 homes' });
+  expect(screen.getByLabelText('City or ZIP code')).toHaveValue('Boston');
   expect(screen.getByTestId('location')).toHaveTextContent('offset=20');
+  expect(screen.getByTestId('location')).toHaveTextContent('sortOrder=ASC');
 });
 
-test('failed search shows a retry action and recovers', async () => {
+test('empty results retain chips and removing one recovers without rebuilding the search', async () => {
+  fetchMock.mockResolvedValueOnce(
+    mockJsonResponse({ total: 0, limit: 20, offset: 0, results: [] }),
+  );
+  renderListings('/?city=Boston&beds=5');
+  await screen.findByRole('heading', { name: 'No homes match this search.' });
+  respondToRoutes();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove 5+ beds filter' }));
+  await screen.findByText('123 Canon Drive');
+  expect(screen.getByTestId('location')).toHaveTextContent('city=Boston');
+  expect(screen.getByTestId('location')).not.toHaveTextContent('beds=');
+});
+
+test('failed search keeps recovery available and retries successfully', async () => {
   fetchMock.mockResolvedValueOnce(
     mockJsonResponse(
       { error: { code: 'SERVICE_UNAVAILABLE', message: 'Please try again shortly.' } },
@@ -139,7 +153,7 @@ test('failed search shows a retry action and recovers', async () => {
   renderListings();
   expect(await screen.findByRole('alert')).toHaveTextContent('Please try again shortly.');
   respondToRoutes();
-  fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await screen.findByText('123 Canon Drive');
 });
 
@@ -151,16 +165,41 @@ test('invalid shared URL is rejected before a network call', () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test('a stale shared page can return to the first page when the dataset has shrunk', async () => {
+test('stale shared page can return to page one while retaining its city', async () => {
   fetchMock.mockResolvedValueOnce(
     mockJsonResponse({ total: 5, limit: 20, offset: 20, results: [] }),
   );
   renderListings('/?city=Boston&offset=20');
-  await screen.findByRole('heading', { name: 'No properties on this page' });
-  expect(screen.getByText('Showing 0-0 of 5 properties')).toBeInTheDocument();
+  await screen.findByRole('heading', { name: 'No homes on this page' });
+  expect(screen.getByText('Showing 0–0 of 5')).toBeInTheDocument();
   respondToRoutes();
   fireEvent.click(screen.getByRole('button', { name: 'Return to first page' }));
   await screen.findByText('123 Canon Drive');
   expect(screen.getByTestId('location')).toHaveTextContent('offset=0');
-  expect(screen.getByLabelText('City')).toHaveValue('Boston');
+  expect(screen.getByLabelText('City or ZIP code')).toHaveValue('Boston');
+});
+
+test('phone Cancel discards location and sort drafts; Show homes applies them together', async () => {
+  useCompactViewport();
+  respondToRoutes();
+  renderListings('/?city=Boston');
+  await screen.findByText('123 Canon Drive');
+  fireEvent.click(screen.getByRole('button', { name: 'Search and filters' }));
+  fireEvent.change(screen.getByLabelText('City or ZIP code'), { target: { value: 'Irvine' } });
+  fireEvent.change(screen.getByLabelText('Sort'), { target: { value: 'price:ASC' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.getByTestId('location')).toHaveTextContent('city=Boston');
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Search and filters' }));
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByLabelText('City or ZIP code')).toHaveValue('Boston');
+  fireEvent.change(within(dialog).getByLabelText('City or ZIP code'), {
+    target: { value: '02108' },
+  });
+  fireEvent.change(within(dialog).getByLabelText('Sort'), { target: { value: 'price:ASC' } });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Show homes' }));
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('zipcode=02108'));
+  expect(screen.getByTestId('location')).not.toHaveTextContent('city=');
+  expect(screen.getByTestId('location')).toHaveTextContent('sortOrder=ASC');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
