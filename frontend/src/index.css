@@ -19,14 +19,12 @@
   --input-line: #8495a3;
   --primary: #ffbb8d;
   --on-primary: #123c4d;
-  --accent: #a94d00;
-  --action-soft: #fff0e3;
-  --on-action-soft: #854000;
+  --accent: var(--primary);
   --teal: #006b73;
   --soft: #e7f4f6;
   --sand: #fff0df;
   --navy: #123c4d;
-  --peach: #ffbb8d;
+  --peach: var(--primary);
   --danger: #a52e25;
   --shadow: 0 8px 24px #102f400d;
   --header-height: 72px;
@@ -39,9 +37,6 @@
   --muted: #bdcdd8;
   --line: #3c5262;
   --input-line: #8aa1b2;
-  --accent: #ffbb8d;
-  --action-soft: #47362c;
-  --on-action-soft: #ffbb8d;
   --teal: #8de0df;
   --soft: #223e49;
   --sand: #47362c;
@@ -125,15 +120,11 @@ p {
   font-size: 13px;
   font-weight: 600;
 }
-.button-primary {
+.button-primary,
+.button-soft {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--on-primary);
-}
-.button-soft {
-  background: var(--action-soft);
-  border-color: transparent;
-  color: var(--on-action-soft);
 }
 .button-quiet {
   background: transparent;

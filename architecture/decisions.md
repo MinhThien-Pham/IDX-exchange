@@ -20,7 +20,7 @@ One combined location input classifies US ZIP and ZIP+4 strings without adding a
 
 **Decision:** CSS design tokens, Lucide icons, a native dialog wrapper, and device-appropriate controls.
 
-The approved Pacific appearance uses navy and peach-orange in light/dark modes. Primary actions and selected controls share one orange fill and navy foreground across themes and devices; secondary buttons use neutral surfaces or muted orange. Viewport layout determines whether controls use a sidebar or lower sheet/dock; short coarse-pointer landscapes also receive the compact controls. At wide desktop sizes the sidebar is pinned; medium desktop layouts can switch between two and three card columns.
+The approved Pacific appearance uses navy and peach-orange in light/dark modes. Every orange accent, including the logo, resolves to the same #FFBB8D token across themes. Orange buttons and selected controls use a navy foreground; secondary buttons may use neutral surfaces. Viewport layout determines whether controls use a sidebar or lower sheet/dock; short coarse-pointer landscapes also receive the compact controls. At wide desktop sizes the sidebar is pinned; medium desktop layouts can switch between two and three card columns.
 
 Native links retain expected browser navigation. The dialog wrapper supplements native modality with a bounded Tab cycle, focus return and scroll locking. Gallery images use native horizontal scroll snapping, numeric counters and explicit buttons. There are no decorative motion libraries, accounts, favorites, or extra product services.
 
