@@ -1,35 +1,49 @@
 {
-  "name": "backend",
+  "name": "@idx/api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "properties.debug.test.js"
-    ]
-  },
+  "private": true,
+  "description": "Modular Express API for IDX Exchange",
+  "main": "dist/app.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:debug": "jest tests/properties.debug.test.js --runInBand"
+    "test:coverage": "jest --coverage --runInBand",
+    "test:integration": "jest tests/integration --runInBand",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:import-legacy": "tsx scripts/import-legacy.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
+    "@idx/contracts": "1.0.0",
+    "@vercel/functions": "^3.10.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "mysql2": "^3.22.5"
+    "express": "^5.3.0",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
-    "jest": "^30.4.2",
-    "nodemon": "^3.1.14",
-    "supertest": "^7.2.2"
+    "@swc/core": "^1.13.0",
+    "@swc/jest": "^0.2.39",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.5.2",
+    "mysql2": "^3.22.5",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
   }
 }

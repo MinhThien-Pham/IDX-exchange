@@ -5,3 +5,24 @@ node_modules/
 *.xlsx
 data/
 coverage/
+
+# Local learning material and private source data
+/docs/
+/sql/
+/backup/
+/data/
+/artifacts/
+/output/
+/.artifacts/
+.env.*
+!.env.example
+dist/
+build/
+.vercel/
+*.log
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Only reviewed schema migrations belong in Git, never source data dumps.
+!backend/db/migrations/*.sql
