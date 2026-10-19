@@ -1,5 +1,7 @@
 # IDX Exchange
 
+[![CI](https://github.com/MinhThien-Pham/IDX-exchange/actions/workflows/ci.yml/badge.svg)](https://github.com/MinhThien-Pham/IDX-exchange/actions/workflows/ci.yml)
+
 Residential property search built with **PostgreSQL, Express, React and Node.js (PERN)** in
 TypeScript. Visitors search listings by location, budget, rooms and home type, sort and page
 through results, and open a listing to see its photos, facts, location and open houses.
@@ -9,6 +11,8 @@ API contracts, deployed to Vercel and Neon.
 
 **Live demo:** https://idx-exchange-three.vercel.app · **API:**
 https://idx-exchange-api.vercel.app/api/openapi.json
+
+![Searching San Diego with filters, opening a listing and returning to the same results](docs/images/demo.gif)
 
 ## Features
 
@@ -25,6 +29,16 @@ https://idx-exchange-api.vercel.app/api/openapi.json
   unavailable listings each show a clear message and a next step.
 - **Read-only, versioned API** (`/api/v1`) with request validation, structured errors, request
   IDs and an OpenAPI document.
+
+## Screenshots
+
+| Search results                                                               | Listing detail                                                                                 |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| ![Search results for San Diego in the light theme](docs/images/listings.jpg) | ![Listing detail with photo gallery and price per square foot](docs/images/listing-detail.jpg) |
+| **Dark theme**                                                               | **Facts, description and open houses**                                                         |
+| ![Search results in the dark theme](docs/images/listings-dark.jpg)           | ![Listing facts, description, property details and open houses](docs/images/listing-facts.jpg) |
+
+![Phone layouts: results with the bottom action bar, the search and filter sheet, and a listing detail](docs/images/mobile.jpg)
 
 ## Data
 

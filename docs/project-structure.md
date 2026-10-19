@@ -9,7 +9,7 @@ IDX-Exchange/
 ├── packages/contracts/      @idx/contracts: shared Zod schemas and types
 ├── e2e/                     Playwright browser tests and their database setup
 ├── scripts/                 architecture boundary checker and its tests
-├── docs/                    this documentation
+├── docs/                    this documentation; images/ holds README screenshots
 ├── .github/                 CI workflow and pull request template
 ├── package.json             npm workspaces and root commands
 ├── tsconfig.base.json       shared compiler options (strict)
