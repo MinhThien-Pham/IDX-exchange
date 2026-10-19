@@ -11,18 +11,21 @@ All colors are CSS custom properties defined at the top of
 [`frontend/src/index.css`](../frontend/src/index.css). Components use tokens, never literal
 colors.
 
-| Token          | Light     | Dark      | Use                                             |
-| -------------- | --------- | --------- | ----------------------------------------------- |
-| `--background` | `#f5f8fb` | `#10212c` | Page background                                 |
-| `--surface`    | `#ffffff` | `#192e3c` | Cards, panels, dialogs                          |
-| `--text`       | `#122f40` | `#f0f6fa` | Primary text                                    |
-| `--muted`      | `#52687a` | `#bdcdd8` | Secondary text                                  |
-| `--line`       | `#dce5eb` | `#3c5262` | Borders and dividers                            |
-| `--primary`    | `#ffbb8d` | `#ffbb8d` | Primary buttons, selected controls, logo accent |
-| `--on-primary` | `#123c4d` | `#123c4d` | Text and icons on `--primary`                   |
-| `--teal`       | `#006b73` | `#8de0df` | Links and informational icons                   |
-| `--danger`     | `#a52e25` | `#ffb3a8` | Validation errors                               |
+| Token          | Light     | Dark      | Use                                                |
+| -------------- | --------- | --------- | -------------------------------------------------- |
+| `--background` | `#f5f8fb` | `#10212c` | Page background                                    |
+| `--surface`    | `#ffffff` | `#192e3c` | Cards, panels, dialogs                             |
+| `--text`       | `#122f40` | `#f0f6fa` | Primary text                                       |
+| `--muted`      | `#3b5163` | `#c4d3dd` | Secondary text                                     |
+| `--line`       | `#dce5eb` | `#3c5262` | Borders and dividers                               |
+| `--input-line` | `#7a8c9b` | `#8aa1b2` | Form field borders (at least 3:1 on every surface) |
+| `--primary`    | `#ffbb8d` | `#ffbb8d` | Primary buttons, selected controls, logo accent    |
+| `--on-primary` | `#123c4d` | `#123c4d` | Text and icons on `--primary`                      |
+| `--teal`       | `#00555c` | `#8de0df` | Links and informational icons                      |
+| `--danger`     | `#a52e25` | `#ffb3a8` | Validation errors                                  |
 
+- Text tokens reach at least 7:1 (WCAG AAA) against every surface they are used on, in both
+  themes; primary-button text on orange is 7.2:1.
 - The orange accent is identical in both themes. Primary actions always use orange with navy
   text; secondary actions use neutral surfaces.
 - Color is never the only signal of a state: selected controls also change shape or text
