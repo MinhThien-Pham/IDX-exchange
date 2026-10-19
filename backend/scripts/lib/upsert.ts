@@ -64,3 +64,29 @@ export async function upsertOpenHouses(db: Database, rows: OpenHouseInsert[]) {
     })
     .returning({ id: openHouses.id });
 }
+
+/**
+ * Removes this source's rows that are absent from a complete export, so the database mirrors
+ * one snapshot. Open houses go first; listings cascade to any events that remain.
+ */
+export async function pruneMissing(
+  db: Database,
+  source: string,
+  keep: { listings: string[]; openHouses: string[] },
+) {
+  return db.transaction(async (tx) => {
+    const removedOpenHouses = await tx
+      .delete(openHouses)
+      .where(
+        sql`${openHouses.source} = ${source} AND NOT (${openHouses.externalId} = ANY(${sql.param(keep.openHouses)}::text[]))`,
+      )
+      .returning({ id: openHouses.id });
+    const removedListings = await tx
+      .delete(listings)
+      .where(
+        sql`${listings.source} = ${source} AND NOT (${listings.externalId} = ANY(${sql.param(keep.listings)}::text[]))`,
+      )
+      .returning({ id: listings.id });
+    return { listings: removedListings.length, openHouses: removedOpenHouses.length };
+  });
+}

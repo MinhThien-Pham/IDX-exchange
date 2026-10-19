@@ -27,7 +27,7 @@ describe('MLS import normalization', () => {
     });
   });
 
-  test('rejects impossible and MySQL zero dates instead of rolling dates forward', () => {
+  test('rejects impossible and zero dates instead of rolling dates forward', () => {
     expect(normalizeDate('2024-02-29')).toBe('2024-02-29');
     for (const value of [
       '2025-02-29',

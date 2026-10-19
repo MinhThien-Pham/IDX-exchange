@@ -7,6 +7,7 @@
 | Use cases and domain      | Jest                        | `backend/tests/use-cases.test.ts`, `home-types.test.ts` | In-memory ports |
 | HTTP API                  | Jest, Supertest             | `backend/tests/api.test.ts`                             | In-memory ports |
 | Configuration             | Jest                        | `backend/tests/environment.test.ts`                     | None            |
+| Data import               | Jest                        | `backend/tests/import/`                                 | None            |
 | PostgreSQL integration    | Jest                        | `backend/tests/integration/`                            | Real PostgreSQL |
 | Web components and models | Jest, React Testing Library | `frontend/src/**/*.test.ts(x)`                          | Mocked `fetch`  |
 | Architecture rules        | Node test runner            | `scripts/architecture-rules.test.mjs`                   | None            |
@@ -59,7 +60,8 @@ Edge instead of Chromium.
   messages to responses or logs.
 - PostgreSQL behavior: constraints, foreign keys, case-insensitive city match, exact ZIP,
   fractional bathrooms, stable ordering with nulls last, pagination, home-type filtering across
-  spellings, literal city prefixes, idempotent seed and import upserts, repeatable migrations.
+  spellings, literal city prefixes, idempotent seed and import upserts, snapshot pruning that leaves other sources untouched,
+  repeatable migrations.
 - Import normalization: invalid dates, times, coordinates, numbers and photo URLs.
 - Dump parsing: quoted values with escapes, commas and JSON, `NULL`, multi-row statements,
   column mismatches, and streaming one table from a file.

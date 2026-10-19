@@ -15,9 +15,10 @@ import {
   type ListingInsert,
   type OpenHouseInsert,
 } from './lib/normalize-mls.js';
-import { upsertListings, upsertOpenHouses } from './lib/upsert.js';
+import { pruneMissing, upsertListings, upsertOpenHouses } from './lib/upsert.js';
 
 type Table = 'rets_property' | 'rets_openhouse';
+const dryRunListingId = '00000000-0000-4000-8000-000000000000';
 type Stats = {
   scanned: number;
   accepted: number;
@@ -69,16 +70,17 @@ async function main() {
       limit: { type: 'string' },
       dir: { type: 'string' },
       'keep-raw': { type: 'boolean', default: false },
+      prune: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
   });
   if (values.help) {
     console.log(
-      'Usage: npm run db:import -- [--dir=<dump folder>] [--write] [--batch-size=250] [--limit=1000] [--keep-raw]',
+      'Usage: npm run db:import -- [--dir=<dump folder>] [--write] [--batch-size=250] [--limit=1000] [--keep-raw] [--prune]',
     );
     console.log(
-      'Default: dry run (reads the dump files and reports normalization; no PostgreSQL writes). --limit applies to each table. --keep-raw also stores each source row in raw_data.',
+      'Default: dry run (reads the dump files and reports normalization; no PostgreSQL writes). --limit applies to each table. --keep-raw also stores each source row in raw_data. --prune deletes records of this source that are not in the export.',
     );
     console.log(
       'Required: a folder with rets_property.sql and rets_openhouse.sql (--dir or MLS_DUMP_DIR). For writes: DATABASE_URL after db:migrate. Optional: MLS_SOURCE=crmls, MLS_TIME_ZONE=America/Los_Angeles.',
@@ -112,6 +114,8 @@ async function main() {
     await access(file).catch(() => {
       throw new Error(`Dump file not found: ${file}`);
     });
+  if (values.prune && (!values.write || limit !== undefined))
+    throw new Error('--prune needs --write and a complete read (no --limit).');
   // Source rows roughly double the stored size, so they are kept only on request.
   const keepRaw = values['keep-raw'];
   const database = values.write ? createDatabase(databaseUrl()) : null;
@@ -121,8 +125,10 @@ async function main() {
       mode: values.write ? 'write' : 'dry-run',
       listings: emptyStats(),
       openHouses: emptyStats(),
+      pruned: { listings: 0, openHouses: 0 },
     };
     const seen = new Set<string>();
+    const seenOpenHouses = new Set<string>();
     for await (const batch of readBatches(files.rets_property, 'rets_property', batchSize, limit)) {
       const normalized: ListingInsert[] = [];
       for (const row of batch) {
@@ -149,9 +155,10 @@ async function main() {
       batchSize,
       limit,
     )) {
+      // A dry run has no UUIDs yet; a placeholder lets it report orphans and normalization.
       const ids = database
         ? await listingMap(database.db, source, batch)
-        : new Map([...seen].map((id) => [id, '00000000-0000-4000-8000-000000000000']));
+        : new Map([...seen].map((id) => [id, dryRunListingId]));
       const normalized: OpenHouseInsert[] = [];
       for (const row of batch) {
         stats.openHouses.scanned += 1;
@@ -168,6 +175,7 @@ async function main() {
           continue;
         }
         stats.openHouses.accepted += 1;
+        seenOpenHouses.add(result.value.externalId);
         normalized.push(keepRaw ? result.value : { ...result.value, rawData: {} });
       }
       if (database)
@@ -176,9 +184,16 @@ async function main() {
         `Open houses: scanned ${stats.openHouses.scanned}, accepted ${stats.openHouses.accepted}, written ${stats.openHouses.written}.`,
       );
     }
+    if (database && values.prune)
+      stats.pruned = await pruneMissing(database.db, source, {
+        listings: [...seen],
+        openHouses: [...seenOpenHouses],
+      });
     console.log(JSON.stringify(stats, null, 2));
     console.log(
-      'Source files were not modified. Imports upsert records; they do not remove listings or events missing from a later export.',
+      values.prune
+        ? 'Source files were not modified. Records of this source that are not in the export were removed.'
+        : 'Source files were not modified. Without --prune, records missing from the export are kept.',
     );
   } finally {
     await database?.pool.end();

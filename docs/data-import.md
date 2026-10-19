@@ -3,12 +3,12 @@
 ## Dataset
 
 The production inventory comes from a historical MLS export supplied by the IDX Exchange SDE
-Internship as phpMyAdmin SQL dump files:
+Internship as SQL dump files (phpMyAdmin format, exported on September 18, 2026):
 
-| File                 | Contents                                                              |
-| -------------------- | --------------------------------------------------------------------- |
-| `rets_property.sql`  | 54,438 listing rows; 54,434 unique listings, almost all in California |
-| `rets_openhouse.sql` | 15,088 recorded open houses, linked to listings by MLS listing number |
+| File                 | Contents                                                                  |
+| -------------------- | ------------------------------------------------------------------------- |
+| `rets_property.sql`  | 55,212 listing rows; 55,209 unique listings, 55,118 of them in California |
+| `rets_openhouse.sql` | 13,433 recorded open houses, linked to listings by MLS listing number     |
 
 The dumps are not part of the repository. They are a snapshot: the data is imported once and is
 not synchronized with a live MLS. The demo seed (`npm run db:seed`) is unrelated to this data and
@@ -17,7 +17,7 @@ is meant for development and tests.
 ## Import process
 
 The importer streams the dump files directly, normalizes each row and upserts it into
-PostgreSQL. No MySQL server is needed.
+PostgreSQL. The dumps are plain text, so no database server is needed to read them.
 
 1. Put `rets_property.sql` and `rets_openhouse.sql` in one folder outside Git.
 2. Apply migrations to the destination: `npm run db:migrate`.
@@ -39,30 +39,34 @@ PostgreSQL. No MySQL server is needed.
    npm run db:import -- --dir=D:/data/mls --limit=1000          # dry run, first 1,000 rows per file
    npm run db:import -- --dir=D:/data/mls                       # dry run on everything
    npm run db:import -- --dir=D:/data/mls --write --batch-size=500
+   npm run db:import -- --dir=D:/data/mls --write --prune      # refresh to a newer export
    ```
 
    Use an absolute path for `--dir`; the command runs inside the `backend` workspace.
 
-| Option         | Default        | Meaning                                  |
-| -------------- | -------------- | ---------------------------------------- |
-| `--dir`        | `MLS_DUMP_DIR` | Folder containing the two dump files     |
-| `--write`      | off            | Without it, PostgreSQL is not touched    |
-| `--batch-size` | 250            | Rows per upsert batch (1–1000)           |
-| `--limit`      | none           | Maximum rows read from **each** file     |
-| `--keep-raw`   | off            | Also store each source row in `raw_data` |
+| Option         | Default        | Meaning                                                                                                |
+| -------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| `--dir`        | `MLS_DUMP_DIR` | Folder containing the two dump files                                                                   |
+| `--write`      | off            | Without it, PostgreSQL is not touched                                                                  |
+| `--batch-size` | 250            | Rows per upsert batch (1–1000)                                                                         |
+| `--limit`      | none           | Maximum rows read from **each** file                                                                   |
+| `--keep-raw`   | off            | Also store each source row in `raw_data`                                                               |
+| `--prune`      | off            | After writing, delete this source's records that are not in the export (needs `--write`, no `--limit`) |
 
 ### Behavior
 
 - Dump files are read as text and never modified. Only `INSERT` statements for the two tables
-  are parsed; strings, escapes and `NULL` follow MySQL dump syntax.
+  are parsed; strings, escapes and `NULL` follow the dump's SQL syntax.
 - Listings are upserted on `(source, external_id)`. A rerun updates existing rows and keeps their
   UUIDs, so detail URLs stay stable. Rows that repeat an MLS number collapse into one listing.
 - Open houses are linked to the listing UUID through the MLS listing number and upserted on
   `(source, external_id)`. An event whose listing is not in the listing file is skipped as an
   orphan.
-- Records missing from a later export are **not** deleted.
+- Without `--prune`, records missing from the export are kept. With `--prune`, the database mirrors
+  the export exactly: listings and open houses of this source that the export no longer contains
+  are deleted in one transaction, and listings that remain keep their UUIDs.
 - By default `raw_data` is stored empty. The full source row roughly doubles the database size
-  (about 530 MB instead of about 230 MB for this dataset), which matters on free database tiers.
+  (about 530 MB instead of about 233 MB for this dataset), which matters on free database tiers.
   Pass `--keep-raw` when the original rows are needed for diagnostics. `raw_data` is never exposed
   by the API.
 - The report lists scanned, accepted, skipped and written counts for each table, plus counts per
@@ -70,9 +74,14 @@ PostgreSQL. No MySQL server is needed.
 
 ### Reference run
 
-A full write of this dataset into PostgreSQL 18 takes under a minute on a laptop and produces
-54,434 listings and 13,424 open houses (1,664 events reference listings outside the export). The
-resulting database is about 230 MB.
+A full write of this dataset into an empty PostgreSQL 18 database takes under a minute on a
+laptop and produces 55,209 listings and 12,111 open houses (1,322 events reference listings
+outside the export). The resulting database is about 233 MB.
+
+Refreshing an existing database in place rewrites most rows, and PostgreSQL keeps the old row
+versions until they are vacuumed, so the database temporarily grows to roughly twice its size.
+On a small storage quota, rebuild instead: recreate the schema, run `db:migrate`, then import
+into the empty tables.
 
 ## Field mapping
 

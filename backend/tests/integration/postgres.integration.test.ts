@@ -7,7 +7,7 @@ import { PostgresListingRepository } from '../../src/modules/listings/infrastruc
 import { PostgresOpenHouseRepository } from '../../src/modules/open-houses/infrastructure/postgres-open-house-repository.js';
 import { seedDemo } from '../../scripts/lib/demo-seed.js';
 import { normalizeMlsListing, normalizeMlsOpenHouse } from '../../scripts/lib/normalize-mls.js';
-import { upsertListings, upsertOpenHouses } from '../../scripts/lib/upsert.js';
+import { pruneMissing, upsertListings, upsertOpenHouses } from '../../scripts/lib/upsert.js';
 
 const connectionString = process.env.TEST_DATABASE_URL;
 // Failing closed prevents accidental cleanup against the demo/production database.
@@ -178,6 +178,29 @@ describePostgres('real PostgreSQL repositories and migrations', () => {
     ]);
     await db.delete(listings).where(eq(listings.id, first!.id));
     expect(await openHouseRepository.findByListingId(first!.id)).toEqual([]);
+  });
+
+  test('pruning keeps one snapshot and leaves other sources untouched', async () => {
+    const source = 'integration-prune-test';
+    const row = (id: string) =>
+      normalizeMlsListing({ L_ListingID: id, L_City: 'Prune City' }, source).value!;
+    const [kept, removed] = await upsertListings(db, [row('keep'), row('drop')]);
+    const event = (id: number, listingId: string) =>
+      normalizeMlsOpenHouse({ id, OpenHouseDate: '2026-11-01' }, listingId, source, 'UTC').value!;
+    await upsertOpenHouses(db, [event(1, kept!.id), event(2, kept!.id), event(3, removed!.id)]);
+    const demoBefore = (await listingRepository.search({ ...search, city: 'Pasadena' })).total;
+
+    expect(await pruneMissing(db, source, { listings: ['keep'], openHouses: ['1'] })).toEqual({
+      listings: 1,
+      openHouses: 2,
+    });
+    expect(await listingRepository.exists(kept!.id)).toBe(true);
+    expect(await listingRepository.exists(removed!.id)).toBe(false);
+    expect(await openHouseRepository.findByListingId(kept!.id)).toHaveLength(1);
+    expect((await listingRepository.search({ ...search, city: 'Pasadena' })).total).toBe(
+      demoBefore,
+    );
+    await db.delete(listings).where(eq(listings.source, source));
   });
 
   test('database constraints reject invalid money, duplicate source IDs and orphan events', async () => {
