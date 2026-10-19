@@ -163,8 +163,22 @@ Missing data is shown as missing, never as zero or as an invented value.
 | Listing date                  | "Listing date unavailable" on cards; omitted from the detail facts                    |
 | Location line                 | "Location unavailable" when city, state and ZIP are all empty                         |
 | Description                   | "No property description was provided."                                               |
-| Photos                        | A labeled placeholder. An image that fails to load also falls back to it.             |
+| Photos                        | A labeled placeholder, only when no photo of the listing can be shown (see below)     |
 | Coordinates                   | No map. With coordinates and no Maps key, a "Get directions" link is shown.           |
+
+### Photos
+
+Photos are loaded from the data source's media server. Links can expire after an export, typically
+when an agent replaces or removes a photo set, and then return `404`.
+
+- A card shows the first photo that loads, trying up to the first three. Only if none of them
+  loads does it show the placeholder. Cards do not show a photo count.
+- The gallery leaves out photos that fail to load. Its counter counts only photos that can be
+  shown, and the photo being viewed stays selected when an earlier one drops out. The next two
+  photos are loaded ahead so failures are found before the visitor reaches them.
+- A photo that failed once is not requested again during the visit.
+- If a listing has no photo links, the gallery says "No images were included for this listing".
+  If it has links but none loads, it says "The photos for this listing could not be loaded".
 
 ### Formatting
 

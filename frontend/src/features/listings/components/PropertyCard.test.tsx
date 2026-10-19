@@ -51,11 +51,26 @@ test('unknown facts are omitted and an unavailable image has a useful fallback',
   expect(screen.getByRole('img', { name: 'Photo unavailable' })).toBeInTheDocument();
 });
 
-test('failed remote images fall back without losing the listing link', () => {
-  renderCard();
-  fireEvent.error(screen.getByRole('img'));
+const image = (src: string) => document.querySelector<HTMLImageElement>(`img[src="${src}"]`);
+
+test('a failed cover falls back to the next photo without losing the listing link', () => {
+  const photos = ['https://example.com/card-a.jpg', 'https://example.com/card-b.jpg'];
+  renderCard({ ...listing, photos });
+  fireEvent.error(image(photos[0]!)!);
+  expect(image(photos[1]!)).toBeInTheDocument();
+  expect(screen.queryByRole('img', { name: 'Photo unavailable' })).not.toBeInTheDocument();
+  fireEvent.error(image(photos[1]!)!);
   expect(screen.getByRole('img', { name: 'Photo unavailable' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /view 123 canon drive/i })).toBeInTheDocument();
+});
+
+test('a card tries at most three photos and shows no photo count', () => {
+  const photos = ['a', 'b', 'c', 'd'].map((name) => `https://example.com/try-${name}.jpg`);
+  renderCard({ ...listing, photos });
+  for (const photo of photos.slice(0, 3)) fireEvent.error(image(photo)!);
+  expect(image(photos[3]!)).not.toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Photo unavailable' })).toBeInTheDocument();
+  expect(screen.queryByLabelText(/\d+ photos/)).not.toBeInTheDocument();
 });
 
 test('a missing subtype omits the badge instead of displaying a generic class', () => {

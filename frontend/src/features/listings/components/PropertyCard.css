@@ -39,23 +39,6 @@
   font-size: 12px;
   font-weight: 600;
 }
-.property-photo-count {
-  position: absolute;
-  bottom: 13px;
-  right: 13px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: #123c4de6;
-  color: white;
-  padding: 5px 7px;
-  border-radius: 5px;
-  font-size: 12px;
-}
-.property-photo-count svg {
-  width: 16px;
-  height: 16px;
-}
 .property-card-content {
   display: flex;
   flex: 1;

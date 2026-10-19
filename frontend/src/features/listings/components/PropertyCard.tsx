@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bath, BedDouble, Images, Ruler } from 'lucide-react';
+import { ArrowUpRight, Bath, BedDouble, Ruler } from 'lucide-react';
 import { type ListingDto } from '@idx/contracts';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -7,13 +7,18 @@ import {
   formatPricePerSquareFoot,
   formatPropertyLocation,
 } from '../../../shared/utils/formatting';
-import './PropertyCard.css';
+import { useWorkingPhotos } from '../../../shared/hooks/useWorkingPhotos';
 import PropertyImage from '../../../shared/ui/PropertyImage';
+import './PropertyCard.css';
+
+// A card tries a few photos before showing the placeholder; the gallery handles the rest.
+const coverAttempts = 3;
 
 export default function PropertyCard({ property }: { property: ListingDto }) {
   const location = useLocation();
   const perFoot = formatPricePerSquareFoot(property.price, property.squareFeet);
   const badge = property.homeType?.label;
+  const [cover] = useWorkingPhotos(property.photos, coverAttempts);
   return (
     <article className="property-card">
       <Link
@@ -23,17 +28,8 @@ export default function PropertyCard({ property }: { property: ListingDto }) {
         aria-label={`View ${property.address || 'property'}`}
       >
         <div className="property-card-photo">
-          <PropertyImage
-            src={property.photos[0]}
-            alt={`Exterior of ${property.address || 'property'}`}
-          />
+          <PropertyImage src={cover} alt={`Exterior of ${property.address || 'property'}`} />
           {badge && <span className="property-tag">{badge}</span>}
-          {property.photos.length > 0 && (
-            <span className="property-photo-count" aria-label={`${property.photos.length} photos`}>
-              <Images aria-hidden="true" />
-              {property.photos.length}
-            </span>
-          )}
         </div>
         <div className="property-card-content">
           <div className="property-pricing">

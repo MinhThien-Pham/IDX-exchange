@@ -146,7 +146,8 @@ These choices are deliberate and keep the product small, predictable and inexpen
   dataset over a live feed; prices, availability and open-house dates reflect the export, and
   recorded open houses may already be in the past.
 - **Source-hosted photos.** Photos are referenced, not copied, so the service stores no media.
-  An image that cannot be loaded falls back to a placeholder.
+  Source links can expire; cards and the gallery skip photos that fail to load, and a placeholder
+  appears only when none of a listing's photos can be shown.
 - **Exact location matching.** City and ZIP match exactly and are completed through suggestions.
   This keeps queries index-backed and results explainable; fuzzy, address and radius search are
   out of scope.

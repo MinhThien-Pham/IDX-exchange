@@ -62,3 +62,47 @@ test('a listing without images cannot open an empty viewer', () => {
   expect(screen.getByText('Photos unavailable')).toBeInTheDocument();
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
 });
+
+function GalleryWith({ photos }: { photos: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <PropertyImageGallery
+      photos={photos}
+      address="Home"
+      open={open}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
+    />
+  );
+}
+const image = (src: string) => document.querySelector<HTMLImageElement>(`img[src="${src}"]`)!;
+
+test('failed photos leave the gallery and the counter without moving the current photo', () => {
+  const photos = [1, 2, 3, 4].map((n) => `https://example.com/drop-${n}.jpg`);
+  render(<GalleryWith photos={photos} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+  expect(screen.getByText('3 / 4')).toBeInTheDocument();
+  fireEvent.error(image(photos[0]!));
+  expect(screen.getByText('2 / 3')).toBeInTheDocument();
+  expect(document.querySelector(`img[src="${photos[0]}"]`)).not.toBeInTheDocument();
+  expect(screen.queryByText('Photo unavailable')).not.toBeInTheDocument();
+});
+
+test('when the current photo fails, the gallery shows the next working one', () => {
+  const photos = [1, 2, 3].map((n) => `https://example.com/current-${n}.jpg`);
+  render(<GalleryWith photos={photos} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+  fireEvent.error(image(photos[1]!));
+  expect(screen.getByText('2 / 2')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Next photo' })).toBeDisabled();
+});
+
+test('a listing whose photos all fail explains that they could not be loaded', () => {
+  const photos = [1, 2].map((n) => `https://example.com/broken-${n}.jpg`);
+  render(<GalleryWith photos={photos} />);
+  for (const photo of photos) fireEvent.error(image(photo));
+  expect(screen.getByText('Photos unavailable')).toBeInTheDocument();
+  expect(screen.getByText('The photos for this listing could not be loaded.')).toBeInTheDocument();
+  expect(screen.queryByRole('button')).not.toBeInTheDocument();
+});

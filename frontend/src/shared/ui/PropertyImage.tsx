@@ -1,5 +1,6 @@
 import { ImageOff } from 'lucide-react';
 import { useState } from 'react';
+import { markPhotoFailed } from '../hooks/useWorkingPhotos';
 
 export default function PropertyImage({
   src,
@@ -27,7 +28,10 @@ export default function PropertyImage({
       className={className}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
-      onError={() => setFailed(src)}
+      onError={() => {
+        setFailed(src);
+        markPhotoFailed(src);
+      }}
     />
   );
 }

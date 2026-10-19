@@ -11,12 +11,15 @@ import {
 } from '../../../shared/utils/formatting';
 import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
 import { usePageScroll } from '../../../shared/hooks/usePageScroll';
+import { useWorkingPhotos } from '../../../shared/hooks/useWorkingPhotos';
 import { useListing } from '../hooks/useListings';
 import { OpenHouses } from '../../open-houses';
 import PropertyImageGallery from './PropertyImageGallery';
 import PropertyMap from './PropertyMap';
 import { headlineFacts, PropertyDetailsList, PropertyFacts } from './PropertyFacts';
 import './PropertyDetailView.css';
+
+const noPhotos: string[] = [];
 
 export default function PropertyDetailView() {
   const { id = '' } = useParams();
@@ -33,6 +36,7 @@ export default function PropertyDetailView() {
     else navigate('/');
   };
   const property = query.data;
+  const photos = useWorkingPhotos(property?.photos ?? noPhotos);
   // A malformed ID (400) and an absent listing (404) are the same dead link to a visitor.
   const missing =
     query.error instanceof ApiError && (query.error.status === 404 || query.error.status === 400);
@@ -152,7 +156,7 @@ export default function PropertyDetailView() {
             <button
               type="button"
               className="button"
-              disabled={!property.photos.length}
+              disabled={!photos.length}
               onClick={() => setPhotosOpen(true)}
             >
               <Images aria-hidden="true" />

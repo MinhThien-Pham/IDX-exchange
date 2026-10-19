@@ -70,8 +70,9 @@ Edge instead of Chromium.
 
 - URL parsing and history restoration, explicit form submission, independent location draft,
   sort composition, individual chip removal, out-of-range page recovery, phone sheet cancellation.
-- Missing-data presentation, price per square foot conditions, image fallbacks, time-zone-aware
-  open-house labels.
+- Missing-data presentation, price per square foot conditions, time-zone-aware open-house labels.
+- Photo fallbacks: a card moves to the next photo, the gallery drops failed photos without moving
+  the current one, and a placeholder appears only when no photo loads.
 - City suggestions: debouncing, cancellation, keyboard and touch selection, ZIP bypass, failure
   message.
 - Gallery counters, bounded navigation, Escape, focus return and scroll preservation.

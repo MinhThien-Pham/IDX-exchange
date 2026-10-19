@@ -1,9 +1,15 @@
 import { ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
+import { useWorkingPhotos } from '../../../shared/hooks/useWorkingPhotos';
 import Modal from '../../../shared/ui/Modal';
 import PropertyImage from '../../../shared/ui/PropertyImage';
 import './PropertyImageGallery.css';
+
+// Loading the next photos early finds expired links before the visitor reaches them.
+const preloadAhead = 2;
+const isNear = (position: number, index: number) =>
+  position >= index && position <= index + preloadAhead;
 
 function PhotoRail({
   photos,
@@ -58,7 +64,7 @@ function PhotoRail({
               <PropertyImage
                 src={src}
                 alt={`${address || 'Property'}, photo ${position + 1}`}
-                eager={position === index}
+                eager={isNear(position, index)}
               />
             </div>
           ) : (
@@ -75,7 +81,7 @@ function PhotoRail({
               <PropertyImage
                 src={src}
                 alt={`${address || 'Property'}, photo ${position + 1}`}
-                eager={position === 0}
+                eager={isNear(position, index)}
               />
             </button>
           ),
@@ -126,28 +132,40 @@ export default function PropertyImageGallery({
   onClose: () => void;
 }) {
   const compact = useMediaQuery(compactLayoutQuery);
-  const [index, setIndex] = useState(0);
+  // Photos that fail to load drop out of the gallery. The selection follows the photo itself,
+  // so removing an earlier photo does not move the visitor to a different one.
+  const visible = useWorkingPhotos(photos);
+  const [selected, setSelected] = useState({ photo: photos[0], position: 0 });
+  const found = selected.photo === undefined ? -1 : visible.indexOf(selected.photo);
+  const index = found >= 0 ? found : Math.max(0, Math.min(selected.position, visible.length - 1));
+  function setIndex(next: number | ((current: number) => number)) {
+    const value = typeof next === 'function' ? next(index) : next;
+    const position = Math.max(0, Math.min(visible.length - 1, value));
+    setSelected({ photo: visible[position], position });
+  }
   function navigate(event: KeyboardEvent) {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
       event.stopPropagation();
-      setIndex((current) =>
-        Math.max(0, Math.min(photos.length - 1, current + (event.key === 'ArrowRight' ? 1 : -1))),
-      );
+      setIndex((current) => current + (event.key === 'ArrowRight' ? 1 : -1));
     }
   }
-  if (!photos.length)
+  if (!visible.length)
     return (
       <div className="gallery-placeholder">
         <ImageOff aria-hidden="true" />
         <strong>Photos unavailable</strong>
-        <p>No images were included for this listing.</p>
+        <p>
+          {photos.length
+            ? 'The photos for this listing could not be loaded.'
+            : 'No images were included for this listing.'}
+        </p>
       </div>
     );
   return (
     <div onKeyDown={navigate}>
       <PhotoRail
-        photos={photos}
+        photos={visible}
         address={address}
         index={index}
         onIndexChange={setIndex}
@@ -170,7 +188,7 @@ export default function PropertyImageGallery({
               {!compact && (
                 <div className="photo-desktop-actions">
                   <span aria-live="polite">
-                    {index + 1} / {photos.length}
+                    {index + 1} / {visible.length}
                   </span>
                   <button
                     className="button photo-close-desktop"
@@ -185,7 +203,7 @@ export default function PropertyImageGallery({
             </header>
             <div className="photo-dialog-body">
               <PhotoRail
-                photos={photos}
+                photos={visible}
                 address={address}
                 index={index}
                 onIndexChange={setIndex}
@@ -208,20 +226,20 @@ export default function PropertyImageGallery({
                     className="button"
                     type="button"
                     aria-label="Previous photo"
-                    onClick={() => setIndex((current) => Math.max(0, current - 1))}
+                    onClick={() => setIndex((current) => current - 1)}
                     disabled={index === 0}
                   >
                     <ChevronLeft aria-hidden="true" />
                   </button>
                   <span aria-live="polite">
-                    {index + 1} / {photos.length}
+                    {index + 1} / {visible.length}
                   </span>
                   <button
                     className="button"
                     type="button"
                     aria-label="Next photo"
-                    onClick={() => setIndex((current) => Math.min(photos.length - 1, current + 1))}
-                    disabled={index === photos.length - 1}
+                    onClick={() => setIndex((current) => current + 1)}
+                    disabled={index === visible.length - 1}
                   >
                     <ChevronRight aria-hidden="true" />
                   </button>
