@@ -1,11 +1,11 @@
 # Product requirements
 
-|             |                                                                                                 |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| **Product** | IDX Exchange: residential property search                                                       |
-| **Context** | IDX Exchange Software Development Engineer Internship, Summer 2026; individual project          |
-| **Type**    | Public, read-only web application with a versioned JSON API                                     |
-| **Data**    | Historical MLS (RETS) snapshot, approximately 54,000 residential listings, mostly in California |
+|             |                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Product** | IDX Exchange: residential property search                                                                           |
+| **Context** | IDX Exchange Software Development Engineer Internship, Summer 2026; individual project                              |
+| **Type**    | Public, read-only web application with a versioned JSON API                                                         |
+| **Data**    | Historical MLS (RETS) snapshot exported September 2026: about 55,000 residential listings, almost all in California |
 
 ## 1. Problem
 

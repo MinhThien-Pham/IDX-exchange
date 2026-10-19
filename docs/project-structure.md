@@ -39,7 +39,7 @@ backend/
 │   │   └── logging/logger.ts     structured JSON logger
 │   └── shared/errors/            ApplicationError
 ├── db/migrations/                numbered SQL migrations
-├── scripts/                      migrate, seed, import-mls and their helpers
+├── scripts/                      migrate, seed, MLS dump import and their helpers
 ├── tests/                        API, use case, environment and PostgreSQL integration tests
 └── vercel.json                   API project build settings
 ```
@@ -106,19 +106,19 @@ the web app builds.
 
 ## Naming conventions
 
-| Item                        | Convention                                                 | Example                           |
-| --------------------------- | ---------------------------------------------------------- | --------------------------------- |
-| Backend files               | kebab-case                                                 | `get-listing-details.ts`          |
-| Use case classes            | Verb phrase, one `execute` method                          | `GetListingDetails.execute(id)`   |
-| Repository ports / adapters | `<Entity>Repository` / `Postgres<Entity>Repository`        | `PostgresListingRepository`       |
-| Module factories            | `create<Module>Module`                                     | `createListingsModule`            |
-| React components            | PascalCase file and default export                         | `PropertyCard.tsx`                |
-| Hooks                       | `use` prefix, camelCase                                    | `useListingSearch.ts`             |
-| Feature API adapters        | `<area>.api.ts`, `fetch*` functions                        | `fetchListings`                   |
-| Component styles            | Same name as the component                                 | `PropertyCard.css`                |
-| Tests                       | `*.test.ts(x)` beside the code (web) or in `backend/tests` | `search-form.test.ts`             |
-| Migrations                  | `NNNN_description.sql`                                     | `0002_listing_search_options.sql` |
-| Error codes                 | UPPER_SNAKE_CASE                                           | `LISTING_NOT_FOUND`               |
+| Item                        | Convention                                                 | Example                         |
+| --------------------------- | ---------------------------------------------------------- | ------------------------------- |
+| Backend files               | kebab-case                                                 | `get-listing-details.ts`        |
+| Use case classes            | Verb phrase, one `execute` method                          | `GetListingDetails.execute(id)` |
+| Repository ports / adapters | `<Entity>Repository` / `Postgres<Entity>Repository`        | `PostgresListingRepository`     |
+| Module factories            | `create<Module>Module`                                     | `createListingsModule`          |
+| React components            | PascalCase file and default export                         | `PropertyCard.tsx`              |
+| Hooks                       | `use` prefix, camelCase                                    | `useListingSearch.ts`           |
+| Feature API adapters        | `<area>.api.ts`, `fetch*` functions                        | `fetchListings`                 |
+| Component styles            | Same name as the component                                 | `PropertyCard.css`              |
+| Tests                       | `*.test.ts(x)` beside the code (web) or in `backend/tests` | `search-form.test.ts`           |
+| Migrations                  | `NNNN_description.sql`                                     | `0001_initial_schema.sql`       |
+| Error codes                 | UPPER_SNAKE_CASE                                           | `LISTING_NOT_FOUND`             |
 
 ## Where to change what
 

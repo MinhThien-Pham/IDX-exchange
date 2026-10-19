@@ -29,7 +29,7 @@ https://idx-exchange-api.vercel.app/api/openapi.json
 ## Data
 
 Production data is a historical MLS (RETS) snapshot supplied by the internship program:
-approximately 54,000 residential listings, mostly in California, with their recorded open houses.
+about 55,000 residential listings, almost all in California, with their recorded open houses.
 It is imported into PostgreSQL once and is **not a live MLS feed**. Prices, availability and
 open-house dates reflect the time of the export. Local development uses 12 invented demo
 listings instead. See [Data import](docs/data-import.md).

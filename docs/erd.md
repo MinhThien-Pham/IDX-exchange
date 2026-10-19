@@ -113,10 +113,9 @@ coordinates outside their ranges. Unknown values are stored as `NULL`, never as 
 
 ## Migrations
 
-| File                                | Change                                                      |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `0001_listings_and_open_houses.sql` | Tables, generated city column, constraints and base indexes |
-| `0002_listing_search_options.sql`   | Home-type expression index and city prefix index            |
+| File                      | Change                                                              |
+| ------------------------- | ------------------------------------------------------------------- |
+| `0001_initial_schema.sql` | Both tables, the generated city column, constraints and all indexes |
 
 `npm run db:migrate` applies pending files in name order inside one transaction protected by an
 advisory lock, and records each file's SHA-256 checksum in `_idx_migrations`. An applied file must
