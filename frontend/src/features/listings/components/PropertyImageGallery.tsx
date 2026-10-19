@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { compactLayoutQuery, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
-import { useWorkingPhotos } from '../../../shared/hooks/useWorkingPhotos';
+import { probePhotos, useWorkingPhotos } from '../../../shared/hooks/useWorkingPhotos';
 import Modal from '../../../shared/ui/Modal';
 import PropertyImage from '../../../shared/ui/PropertyImage';
 import './PropertyImageGallery.css';
@@ -135,6 +135,10 @@ export default function PropertyImageGallery({
   // Photos that fail to load drop out of the gallery. The selection follows the photo itself,
   // so removing an earlier photo does not move the visitor to a different one.
   const visible = useWorkingPhotos(photos);
+  // One expired link usually means more in the same set: check the rest in the background so
+  // the counter settles quickly. Listings whose photos all load make no extra requests.
+  const hasFailures = visible.length < photos.length;
+  useEffect(() => (hasFailures ? probePhotos(photos) : undefined), [hasFailures, photos]);
   const [selected, setSelected] = useState({ photo: photos[0], position: 0 });
   const found = selected.photo === undefined ? -1 : visible.indexOf(selected.photo);
   const index = found >= 0 ? found : Math.max(0, Math.min(selected.position, visible.length - 1));

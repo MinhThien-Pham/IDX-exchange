@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import PropertyImageGallery from './PropertyImageGallery';
 
@@ -105,4 +105,56 @@ test('a listing whose photos all fail explains that they could not be loaded', (
   expect(screen.getByText('Photos unavailable')).toBeInTheDocument();
   expect(screen.getByText('The photos for this listing could not be loaded.')).toBeInTheDocument();
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
+});
+
+// Background checks use detached Image objects; this stand-in lets a test decide each outcome.
+class ProbeImage {
+  static created: ProbeImage[] = [];
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  src = '';
+  constructor() {
+    ProbeImage.created.push(this);
+  }
+}
+const probed = (src: string) => ProbeImage.created.find((image) => image.src === src);
+describe('background photo checks', () => {
+  const realImage = window.Image;
+  beforeEach(() => {
+    ProbeImage.created = [];
+    window.Image = ProbeImage as unknown as typeof Image;
+  });
+  afterEach(() => {
+    window.Image = realImage;
+  });
+
+  test('a listing whose photos load makes no background requests', () => {
+    render(<GalleryWith photos={[1, 2, 3].map((n) => `https://example.com/fine-${n}.jpg`)} />);
+    expect(ProbeImage.created).toHaveLength(0);
+  });
+
+  test('after one failure the remaining photos are checked and the counter settles', () => {
+    const photos = [1, 2, 3, 4, 5].map((n) => `https://example.com/expired-${n}.jpg`);
+    render(<GalleryWith photos={photos} />);
+    fireEvent.error(image(photos[1]!));
+    expect(screen.getByText('1 / 4')).toBeInTheDocument();
+    act(() => {
+      for (const photo of photos.slice(2)) probed(photo)?.onerror?.();
+    });
+    expect(screen.getByText('1 / 1')).toBeInTheDocument();
+  });
+
+  test('checking stops after four photos in a row load', () => {
+    const photos = Array.from({ length: 10 }, (_, n) => `https://example.com/mixed-${n}.jpg`);
+    render(<GalleryWith photos={photos} />);
+    fireEvent.error(image(photos[0]!));
+    // Settle every started check once, including checks started by earlier settlements.
+    act(() => {
+      for (let settled = 0; settled < ProbeImage.created.length; settled += 1)
+        ProbeImage.created[settled]!.onload?.();
+    });
+    expect(probed(photos[9]!)).toBeUndefined();
+    expect(ProbeImage.created.length).toBeLessThan(photos.length - 1);
+    expect(screen.getByText('1 / 9')).toBeInTheDocument();
+  });
 });

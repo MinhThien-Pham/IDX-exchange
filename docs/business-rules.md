@@ -175,7 +175,11 @@ when an agent replaces or removes a photo set, and then return `404`.
   loads does it show the placeholder. Cards do not show a photo count.
 - The gallery leaves out photos that fail to load. Its counter counts only photos that can be
   shown, and the photo being viewed stays selected when an earlier one drops out. The next two
-  photos are loaded ahead so failures are found before the visitor reaches them.
+  photos are loaded ahead.
+- Once a listing has a failed photo, the gallery checks its remaining photos in the background,
+  four at a time, so the counter settles within seconds. Expired links tend to come in runs, so
+  the check stops after four photos in a row load; listings whose photos all load make no extra
+  requests.
 - A photo that failed once is not requested again during the visit.
 - If a listing has no photo links, the gallery says "No images were included for this listing".
   If it has links but none loads, it says "The photos for this listing could not be loaded".
