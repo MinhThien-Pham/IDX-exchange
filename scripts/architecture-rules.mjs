@@ -13,7 +13,7 @@ export function boundaryViolation(file, dependency) {
       ? 'packages/contracts/src/index.ts'
       : null;
   const inDirectory = (directory) => target?.startsWith(`${directory}/`);
-  const databasePackage = /^(pg|drizzle-orm|mysql2)(\/|$)/.test(dependency);
+  const databasePackage = /^(pg|drizzle-orm)(\/|$)/.test(dependency);
   const uiPackage =
     /^(react|react-dom|react-router-dom|@tanstack\/react-query|lucide-react)(\/|$)/.test(
       dependency,

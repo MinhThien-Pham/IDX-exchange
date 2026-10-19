@@ -3,12 +3,12 @@
 ## Dataset
 
 The production inventory comes from a historical MLS export supplied by the IDX Exchange SDE
-Internship as MySQL dump files. The relevant tables are:
+Internship as phpMyAdmin SQL dump files:
 
-| Table            | Contents                                                                          |
-| ---------------- | --------------------------------------------------------------------------------- |
-| `rets_property`  | Listings: about 54,400 rows, almost all in California, all of class `Residential` |
-| `rets_openhouse` | Recorded open houses linked to listings by MLS listing number                     |
+| File                 | Contents                                                              |
+| -------------------- | --------------------------------------------------------------------- |
+| `rets_property.sql`  | 54,438 listing rows; 54,434 unique listings, almost all in California |
+| `rets_openhouse.sql` | 15,088 recorded open houses, linked to listings by MLS listing number |
 
 The dumps are not part of the repository. They are a snapshot: the data is imported once and is
 not synchronized with a live MLS. The demo seed (`npm run db:seed`) is unrelated to this data and
@@ -16,52 +16,63 @@ is meant for development and tests.
 
 ## Import process
 
-The importer reads the two tables from a MySQL or MariaDB server, normalizes each row, and
-upserts it into PostgreSQL.
+The importer streams the dump files directly, normalizes each row and upserts it into
+PostgreSQL. No MySQL server is needed.
 
-1. Restore the dump files into a local MySQL or MariaDB database, for example with MySQL
-   Workbench or `SOURCE rets_property.sql;`. The importer reads tables, not dump files.
+1. Put `rets_property.sql` and `rets_openhouse.sql` in one folder outside Git.
 2. Apply migrations to the destination: `npm run db:migrate`.
-3. Add the source settings to `backend/.env`:
+3. Optionally set the source settings in `backend/.env`:
 
    ```dotenv
-   MLS_MYSQL_URL=mysql://user:password@localhost:3306/rets
+   MLS_DUMP_DIR=D:/data/mls
    MLS_SOURCE=crmls
    MLS_TIME_ZONE=America/Los_Angeles
    ```
 
-   URL-encode special characters in the password. `MLS_SOURCE` namespaces every imported
-   record (`source` column); keep it the same on every run so reruns update rather than duplicate.
+   `MLS_DUMP_DIR` is the default for `--dir`. `MLS_SOURCE` namespaces every imported record
+   (`source` column); keep it the same on every run so reruns update rather than duplicate.
    `MLS_TIME_ZONE` is the IANA zone in which the source records open-house times.
 
 4. Run a dry run, review the report, then write:
 
    ```sh
-   npm run db:import -- --limit=1000                 # dry run on the first 1,000 rows per table
-   npm run db:import                                 # dry run on everything
-   npm run db:import -- --write --batch-size=250     # write to DATABASE_URL
+   npm run db:import -- --dir=D:/data/mls --limit=1000          # dry run, first 1,000 rows per file
+   npm run db:import -- --dir=D:/data/mls                       # dry run on everything
+   npm run db:import -- --dir=D:/data/mls --write --batch-size=500
    ```
 
-| Option         | Default | Meaning                                 |
-| -------------- | ------- | --------------------------------------- |
-| `--write`      | off     | Without it, PostgreSQL is not touched   |
-| `--batch-size` | 250     | Rows per read and upsert batch (1–1000) |
-| `--limit`      | none    | Maximum rows read from **each** table   |
+   Use an absolute path for `--dir`; the command runs inside the `backend` workspace.
+
+| Option         | Default        | Meaning                                  |
+| -------------- | -------------- | ---------------------------------------- |
+| `--dir`        | `MLS_DUMP_DIR` | Folder containing the two dump files     |
+| `--write`      | off            | Without it, PostgreSQL is not touched    |
+| `--batch-size` | 250            | Rows per upsert batch (1–1000)           |
+| `--limit`      | none           | Maximum rows read from **each** file     |
+| `--keep-raw`   | off            | Also store each source row in `raw_data` |
 
 ### Behavior
 
-- The source receives only `SELECT` statements. Tables are read in batches ordered by their
-  integer primary key.
+- Dump files are read as text and never modified. Only `INSERT` statements for the two tables
+  are parsed; strings, escapes and `NULL` follow MySQL dump syntax.
 - Listings are upserted on `(source, external_id)`. A rerun updates existing rows and keeps their
-  UUIDs, so detail URLs stay stable.
+  UUIDs, so detail URLs stay stable. Rows that repeat an MLS number collapse into one listing.
 - Open houses are linked to the listing UUID through the MLS listing number and upserted on
-  `(source, external_id)`. An event whose listing was not imported is skipped as an orphan.
+  `(source, external_id)`. An event whose listing is not in the listing file is skipped as an
+  orphan.
 - Records missing from a later export are **not** deleted.
-- The original row is stored in `raw_data` for diagnostics. It is never exposed by the API.
+- By default `raw_data` is stored empty. The full source row roughly doubles the database size
+  (about 530 MB instead of about 230 MB for this dataset), which matters on free database tiers.
+  Pass `--keep-raw` when the original rows are needed for diagnostics. `raw_data` is never exposed
+  by the API.
 - The report lists scanned, accepted, skipped and written counts for each table, plus counts per
   warning type. Errors are reported without connection strings or row contents.
-- The open-house source table is MyISAM and offers no transactional snapshot. Pause any process
-  writing to the source while running a full import.
+
+### Reference run
+
+A full write of this dataset into PostgreSQL 18 takes under a minute on a laptop and produces
+54,434 listings and 13,424 open houses (1,664 events reference listings outside the export). The
+resulting database is about 230 MB.
 
 ## Field mapping
 
@@ -107,7 +118,8 @@ with a warning such as `listing.invalid_price`. Values are never replaced with z
 After a write run:
 
 1. Compare the importer's `written` counts with `SELECT count(*) FROM listings` and
-   `SELECT count(*) FROM open_houses`.
+   `SELECT count(*) FROM open_houses`. A difference of a few listings is expected when the export
+   repeats an MLS number.
 2. Review the warning counts and spot-check a few skipped or warned rows in the source.
 3. Search a few known cities and ZIP codes in the web app and open several listings, including
    ones with open houses.

@@ -33,5 +33,5 @@ export function safeError(error: unknown): string {
   const message = error instanceof Error ? error.message : 'Database command failed';
   if (message.startsWith('Failed query:'))
     return 'Database query failed; verify the connection and migrated schema.';
-  return message.replace(/(?:postgres(?:ql)?|mysql):\/\/[^\s]+/gi, '[redacted connection URL]');
+  return message.replace(/postgres(?:ql)?:\/\/[^\s]+/gi, '[redacted connection URL]');
 }

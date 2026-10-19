@@ -62,7 +62,7 @@ npm run dev                             # web on :5173, API on :5000
 | `npm run verify`    | Lint, architecture checks, typecheck, build, format and tests |
 | `npm test`          | API and web unit, component and HTTP tests                    |
 | `npm run test:e2e`  | Playwright browser tests against a real API and test database |
-| `npm run db:import` | Import the MLS MySQL dataset (dry run unless `--write`)       |
+| `npm run db:import` | Import the MLS dump files (dry run unless `--write`)          |
 
 Full setup, environment variables and troubleshooting: [Getting started](docs/getting-started.md).
 
@@ -104,5 +104,5 @@ React feature ─▶ query hook ─▶ API adapter ──HTTP /api/v1──▶ r
 | [UI guidelines](docs/ui-guidelines.md)         | Visual design, responsive layouts and accessibility           |
 | [Testing](docs/testing.md)                     | Test layers, coverage gates and CI                            |
 | [Deployment](docs/deployment.md)               | Neon and Vercel setup, environment variables, smoke tests     |
-| [Data import](docs/data-import.md)             | Dataset, MLS MySQL import and normalization rules             |
+| [Data import](docs/data-import.md)             | Dataset, dump import and normalization rules                  |
 | [Decisions](docs/decisions.md)                 | Architecture decision records                                 |

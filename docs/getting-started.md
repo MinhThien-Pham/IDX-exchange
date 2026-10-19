@@ -46,7 +46,7 @@ Copy-Item frontend/.env.example frontend/.env
 | `PORT`                   | No          | `5000`                                                      | Local API port                                                              |
 | `NODE_ENV`               | No          | `development`                                               | `development`, `test` or `production`                                       |
 | `LOG_LEVEL`              | No          | `info`                                                      | `info` or `silent`                                                          |
-| `MLS_MYSQL_URL`          | Import only | `mysql://user:password@localhost:3306/rets`                 | Source database for `db:import`                                             |
+| `MLS_DUMP_DIR`           | Import only | `D:/data/mls`                                               | Folder with the MLS dump files; default for `db:import --dir`               |
 | `MLS_SOURCE`             | Import only | `crmls`                                                     | Namespace stored with each imported record                                  |
 | `MLS_TIME_ZONE`          | Import only | `America/Los_Angeles`                                       | IANA zone of the source's open-house times                                  |
 
@@ -110,7 +110,7 @@ contract, restart it so the API picks up the rebuilt package.
 | `npm run verify:ci`        | `check` plus coverage, as run in CI                                     |
 | `npm run db:migrate`       | Apply migrations                                                        |
 | `npm run db:seed`          | Upsert the demo data                                                    |
-| `npm run db:import`        | Import the MLS MySQL dataset (dry run unless `--write`)                 |
+| `npm run db:import`        | Import the MLS dump files (dry run unless `--write`)                    |
 
 Test databases and browser tests are described in [Testing](testing.md).
 

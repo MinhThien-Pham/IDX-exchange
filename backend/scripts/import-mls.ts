@@ -1,9 +1,11 @@
+import { access } from 'node:fs/promises';
+import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { and, eq, inArray } from 'drizzle-orm';
-import mysql, { type Connection, type RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import { createDatabase, type Database } from '../src/platform/db/client.js';
 import { listings } from '../src/platform/db/schema.js';
+import { readDumpRows } from './lib/dump-reader.js';
 import { databaseUrl, safeError } from './lib/environment.js';
 import {
   normalizeMlsListing,
@@ -28,30 +30,25 @@ function recordWarnings(stats: Stats, warnings: string[]) {
   for (const warning of warnings) stats.warnings[warning] = (stats.warnings[warning] ?? 0) + 1;
 }
 
-// Fixed table names and parameterized values: no raw user input becomes SQL syntax.
+// Streams the dump file in batches; a limit applies to each table.
 async function* readBatches(
-  connection: Connection,
+  file: string,
   table: Table,
   batchSize: number,
   limit?: number,
 ): AsyncGenerator<MlsRow[]> {
-  let afterId = -2_147_483_649;
+  let batch: MlsRow[] = [];
   let scanned = 0;
-  while (limit === undefined || scanned < limit) {
-    const remaining = limit === undefined ? batchSize : Math.min(batchSize, limit - scanned);
-    const query =
-      table === 'rets_property'
-        ? 'SELECT * FROM rets_property WHERE id > ? ORDER BY id ASC LIMIT ?'
-        : 'SELECT * FROM rets_openhouse WHERE id > ? ORDER BY id ASC LIMIT ?';
-    const [rows] = await connection.query<RowDataPacket[]>(query, [afterId, remaining]);
-    if (!rows.length) break;
-    const nextId = Number(rows.at(-1)?.id);
-    if (!Number.isSafeInteger(nextId) || nextId <= afterId)
-      throw new Error(`${table} must have a unique, increasing integer id primary key.`);
-    yield rows;
-    afterId = nextId;
-    scanned += rows.length;
+  for await (const row of readDumpRows(file, table)) {
+    batch.push(row);
+    scanned += 1;
+    if (batch.length === batchSize) {
+      yield batch;
+      batch = [];
+    }
+    if (limit !== undefined && scanned >= limit) break;
   }
+  if (batch.length) yield batch;
 }
 
 async function listingMap(db: Database, source: string, rows: MlsRow[]) {
@@ -70,19 +67,21 @@ async function main() {
       write: { type: 'boolean', default: false },
       'batch-size': { type: 'string', default: '250' },
       limit: { type: 'string' },
+      dir: { type: 'string' },
+      'keep-raw': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
   });
   if (values.help) {
     console.log(
-      'Usage: npm run db:import-mls --workspace @idx/api -- [--write] [--batch-size=250] [--limit=1000]',
+      'Usage: npm run db:import -- [--dir=<dump folder>] [--write] [--batch-size=250] [--limit=1000] [--keep-raw]',
     );
     console.log(
-      'Default: dry run (reads MySQL and reports normalization; no PostgreSQL writes). --limit applies to each table.',
+      'Default: dry run (reads the dump files and reports normalization; no PostgreSQL writes). --limit applies to each table. --keep-raw also stores each source row in raw_data.',
     );
     console.log(
-      'Required: MLS_MYSQL_URL. For writes: DATABASE_URL after db:migrate. Optional: MLS_SOURCE=crmls, MLS_TIME_ZONE=America/Los_Angeles.',
+      'Required: a folder with rets_property.sql and rets_openhouse.sql (--dir or MLS_DUMP_DIR). For writes: DATABASE_URL after db:migrate. Optional: MLS_SOURCE=crmls, MLS_TIME_ZONE=America/Los_Angeles.',
     );
     return;
   }
@@ -102,34 +101,29 @@ async function main() {
   } catch {
     throw new Error('MLS_TIME_ZONE must be a valid IANA time zone.');
   }
-  if (!process.env.MLS_MYSQL_URL)
-    throw new Error('Set MLS_MYSQL_URL=mysql://user:password@localhost:3306/rets in backend/.env.');
-  const sourceUrl = new URL(process.env.MLS_MYSQL_URL);
-  if (sourceUrl.protocol !== 'mysql:' || !sourceUrl.pathname.slice(1))
-    throw new Error('MLS_MYSQL_URL must be a mysql:// URL with a database name.');
-  const database = values.write ? createDatabase(databaseUrl()) : null;
-  let connection: Connection | undefined;
-  try {
-    connection = await mysql.createConnection({
-      host: sourceUrl.hostname,
-      port: sourceUrl.port ? Number(sourceUrl.port) : 3306,
-      user: decodeURIComponent(sourceUrl.username),
-      password: decodeURIComponent(sourceUrl.password),
-      database: decodeURIComponent(sourceUrl.pathname.slice(1)),
-      dateStrings: true,
-      supportBigNumbers: true,
-      bigNumberStrings: true,
-      charset: 'utf8mb4',
+  const directory = values.dir || process.env.MLS_DUMP_DIR;
+  if (!directory)
+    throw new Error('Pass --dir=<folder> or set MLS_DUMP_DIR to the folder with the dump files.');
+  const files = {
+    rets_property: join(directory, 'rets_property.sql'),
+    rets_openhouse: join(directory, 'rets_openhouse.sql'),
+  } satisfies Record<Table, string>;
+  for (const file of Object.values(files))
+    await access(file).catch(() => {
+      throw new Error(`Dump file not found: ${file}`);
     });
-    // These are SELECT-only source reads. MyISAM open-house tables cannot provide
-    // a transactional snapshot; pause the source writer during a full migration.
+  // Source rows roughly double the stored size, so they are kept only on request.
+  const keepRaw = values['keep-raw'];
+  const database = values.write ? createDatabase(databaseUrl()) : null;
+  try {
+    // Dump files are only read, never modified.
     const stats = {
       mode: values.write ? 'write' : 'dry-run',
       listings: emptyStats(),
       openHouses: emptyStats(),
     };
     const seen = new Set<string>();
-    for await (const batch of readBatches(connection, 'rets_property', batchSize, limit)) {
+    for await (const batch of readBatches(files.rets_property, 'rets_property', batchSize, limit)) {
       const normalized: ListingInsert[] = [];
       for (const row of batch) {
         stats.listings.scanned += 1;
@@ -141,7 +135,7 @@ async function main() {
         }
         seen.add(result.value.externalId);
         stats.listings.accepted += 1;
-        normalized.push(result.value);
+        normalized.push(keepRaw ? result.value : { ...result.value, rawData: {} });
       }
       if (database)
         stats.listings.written += (await upsertListings(database.db, normalized)).length;
@@ -149,7 +143,12 @@ async function main() {
         `Listings: scanned ${stats.listings.scanned}, accepted ${stats.listings.accepted}, written ${stats.listings.written}.`,
       );
     }
-    for await (const batch of readBatches(connection, 'rets_openhouse', batchSize, limit)) {
+    for await (const batch of readBatches(
+      files.rets_openhouse,
+      'rets_openhouse',
+      batchSize,
+      limit,
+    )) {
       const ids = database
         ? await listingMap(database.db, source, batch)
         : new Map([...seen].map((id) => [id, '00000000-0000-4000-8000-000000000000']));
@@ -169,7 +168,7 @@ async function main() {
           continue;
         }
         stats.openHouses.accepted += 1;
-        normalized.push(result.value);
+        normalized.push(keepRaw ? result.value : { ...result.value, rawData: {} });
       }
       if (database)
         stats.openHouses.written += (await upsertOpenHouses(database.db, normalized)).length;
@@ -179,10 +178,9 @@ async function main() {
     }
     console.log(JSON.stringify(stats, null, 2));
     console.log(
-      'Source rows were never modified. Imports upsert records; they do not remove listings or events missing from a later export.',
+      'Source files were not modified. Imports upsert records; they do not remove listings or events missing from a later export.',
     );
   } finally {
-    await connection?.end();
     await database?.pool.end();
   }
 }

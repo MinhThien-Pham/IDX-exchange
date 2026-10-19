@@ -61,6 +61,8 @@ Edge instead of Chromium.
   fractional bathrooms, stable ordering with nulls last, pagination, home-type filtering across
   spellings, literal city prefixes, idempotent seed and import upserts, repeatable migrations.
 - Import normalization: invalid dates, times, coordinates, numbers and photo URLs.
+- Dump parsing: quoted values with escapes, commas and JSON, `NULL`, multi-row statements,
+  column mismatches, and streaming one table from a file.
 
 **Web app**
 

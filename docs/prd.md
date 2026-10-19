@@ -9,7 +9,7 @@
 
 ## 1. Problem
 
-The internship supplied MLS listing data as MySQL tables exported from a RETS feed. In that form
+The internship supplied MLS listing data as SQL dumps of tables exported from a RETS feed. In that form
 the data cannot be used to look for a home:
 
 1. **It cannot be searched by a visitor.** Finding three-bedroom homes in one city under a budget
@@ -88,7 +88,7 @@ These audiences are derived from the product scope.
 ### E. API and data
 
 - Read-only versioned API (`/api/v1`) with an OpenAPI document and health endpoints.
-- Migrations, a demo seed, and an importer for the MLS MySQL tables.
+- Migrations, a demo seed, and an importer for the MLS dump files.
 
 ## 5. Functional requirements
 
