@@ -49,9 +49,12 @@ Environment variables:
 | Variable           | Value                                                                        |
 | ------------------ | ---------------------------------------------------------------------------- |
 | `DATABASE_URL`     | Neon **pooled** connection string                                            |
-| `NODE_ENV`         | `production`                                                                 |
 | `FRONTEND_ORIGINS` | Exact web origin(s), comma-separated, e.g. `https://idx-exchange.vercel.app` |
 | `LOG_LEVEL`        | `info`                                                                       |
+
+Do not set `NODE_ENV` as a project variable. Vercel sets it to `production` at runtime, and a
+project-level value also applies during the build, where it makes `npm ci` skip the development
+dependencies (TypeScript) that the build needs.
 
 After deploying, check:
 
