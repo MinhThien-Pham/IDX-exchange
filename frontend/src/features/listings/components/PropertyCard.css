@@ -80,6 +80,10 @@
   font-weight: 400;
   white-space: nowrap;
 }
+.property-pricing .price-per-foot {
+  margin-inline-start: auto;
+  text-align: right;
+}
 .property-stats {
   display: flex;
   flex-wrap: wrap;

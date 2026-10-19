@@ -27,6 +27,10 @@
   font-weight: 750;
   letter-spacing: -1px;
 }
+.detail-pricing .price-per-foot {
+  margin-inline-start: auto;
+  text-align: right;
+}
 .detail-header h1 {
   font-size: 25px;
   line-height: 1.3;
