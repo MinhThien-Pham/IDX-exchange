@@ -1,4 +1,4 @@
--- The legacy MLS ID belongs to a source. Public API IDs are independent UUIDs.
+-- Listings keep their source identity (source, external_id); public API IDs are UUIDs.
 CREATE TABLE listings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source text NOT NULL CHECK (length(btrim(source)) > 0),
@@ -27,6 +27,11 @@ CREATE TABLE listings (
 );
 CREATE UNIQUE INDEX listings_source_external_id_unique ON listings(source, external_id);
 CREATE INDEX listings_city_normalized_idx ON listings(city_normalized);
+-- Prefix suggestions use the normalized city column rather than a wildcard scan.
+CREATE INDEX listings_city_prefix_idx ON listings(city_normalized text_pattern_ops);
+-- Matches every source spelling of a home type, e.g. "Single Family Residence".
+CREATE INDEX listings_home_type_idx
+  ON listings((regexp_replace(lower(property_sub_type), '[^a-z0-9]', '', 'g')));
 CREATE INDEX listings_zipcode_idx ON listings(zipcode);
 CREATE INDEX listings_price_id_idx ON listings(price ASC NULLS LAST, id ASC);
 CREATE INDEX listings_listed_at_id_idx ON listings(listed_at DESC NULLS LAST, id ASC);
