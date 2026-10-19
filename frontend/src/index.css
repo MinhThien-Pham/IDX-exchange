@@ -19,12 +19,10 @@
   --input-line: #8495a3;
   --primary: #ffbb8d;
   --on-primary: #123c4d;
-  --accent: var(--primary);
   --teal: #006b73;
   --soft: #e7f4f6;
   --sand: #fff0df;
   --navy: #123c4d;
-  --peach: var(--primary);
   --danger: #a52e25;
   --shadow: 0 8px 24px #102f400d;
   --header-height: 72px;
@@ -218,7 +216,7 @@ p {
 }
 .wordmark em {
   font-style: normal;
-  color: var(--accent);
+  color: var(--primary);
 }
 .wordmark small {
   color: var(--teal);
@@ -251,7 +249,7 @@ p {
   left: 5px;
   right: 5px;
   height: 3px;
-  background: var(--accent);
+  background: var(--primary);
 }
 .theme-toggle {
   min-height: 44px;
@@ -286,7 +284,7 @@ p {
   background: white;
 }
 [data-theme='dark'] .theme-track {
-  background: var(--peach);
+  background: var(--primary);
 }
 [data-theme='dark'] .theme-track::after {
   left: 16px;

@@ -10,20 +10,14 @@ build/
 .env.*
 !.env.example
 
-# Source data and dumps stay outside Git
+# Data dumps stay outside Git
 *.sql
-*.csv
-*.xlsx
-/data/
-/sql/
-/backup/
 
-# Generated reports and local tool output
+# Generated reports
 coverage/
 playwright-report/
 test-results/
 *.log
-/output/
 
 # Reviewed schema migrations are the only committed SQL.
 !backend/db/migrations/*.sql
