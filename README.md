@@ -7,6 +7,9 @@ through results, and open a listing to see its photos, facts, location and open 
 Developed individually for the **IDX Exchange Software Development Engineer Internship (Summer 2026)**. The project is a TypeScript monorepo with a modular Express API, PostgreSQL and shared
 API contracts, deployed to Vercel and Neon.
 
+**Live demo:** https://idx-exchange-three.vercel.app · **API:**
+https://idx-exchange-api.vercel.app/api/openapi.json
+
 ## Features
 
 - **Search**: one "City or ZIP code" field with city suggestions from the inventory, price range,
