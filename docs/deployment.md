@@ -90,6 +90,10 @@ Environment variables:
 After the web project has its final domain, set that domain in the API's `FRONTEND_ORIGINS` and
 redeploy the API.
 
+The app includes Vercel Web Analytics (`@vercel/analytics`, cookieless page-view counts). Enable it
+under the web project's **Analytics** tab; until then the script request returns 404 and nothing is
+recorded. Local and test runs do not record visits.
+
 ## 4. Smoke test
 
 1. Both health endpoints respond as above.

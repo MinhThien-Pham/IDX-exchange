@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ListingsPage from '../pages/ListingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -19,6 +20,7 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        <Analytics />
       </AppProviders>
     </ErrorBoundary>
   );
